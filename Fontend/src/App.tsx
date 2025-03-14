@@ -71,7 +71,7 @@ function App() {
     className="absolute inset-0 w-full h-full object-cover brightness-50"
   />
   <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-4">
-    <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">World Cuisine</h1>
+    <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">Miko đáng iu</h1>
     <p className="text-xl md:text-2xl text-white mb-8 max-w-2xl">
       Khám phá ẩm thực từ khắp nơi trên thế giới và chia sẻ trải nghiệm của bạn
     </p>

@@ -1,0 +1,38 @@
+GET http://localhost:8080/api/v1/restaurants
+###
+GET http://localhost:8080/api/v1/restaurants/1
+
+###
+POST http://localhost:8080/api/v1/restaurants
+Content-Type: application/json
+
+{
+    "owner_id": "67d16d07fa72b74e7f894d72",
+    "name": "nhà hàng mikodangiu",
+    "address": "123 nguyen van đâđâlinh",
+    "phone": "09090909092233",
+    "description": "nha hanđâđâg ngon221111",
+    "category_id": "67d2c7907de6e31515acd973",
+    "average_rating": 4.5,
+    "image_url": "https://via.placeholder.com/150",
+    "is_active": true
+
+}
+
+###
+
+PUT http://localhost:8080/api/v1/users/67d16d9c5fa5d8164fc7c6aa
+Content-Type: application/json
+
+{
+    "username": "khachhang",
+    "fullname": "khachhang",
+    "email": "khachhang@gmail.com",
+    "password": "khachhang",
+    "role": "restaurant_owner"
+}
+
+###
+DELETE http://localhost:8080/api/v1/users/67d2491bcec58d464bf67774
+
+###

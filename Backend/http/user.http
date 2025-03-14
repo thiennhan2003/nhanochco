@@ -1,0 +1,33 @@
+GET http://localhost:8080/api/v1/users
+###
+GET http://localhost:8080/api/v1/users/1
+
+###
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+    "username": "khachhang2",
+    "fullname": "khachhang2",
+    "email": "khachhang2@gmail.com",
+    "password": "khachhang2",
+    "role": "customer"
+}
+
+###
+
+PUT http://localhost:8080/api/v1/users/67d16d9c5fa5d8164fc7c6aa
+Content-Type: application/json
+
+{
+    "username": "khachhang",
+    "fullname": "khachhang",
+    "email": "khachhang@gmail.com",
+    "password": "khachhang",
+    "role": "restaurant_owner"
+}
+
+###
+DELETE http://localhost:8080/api/v1/users/67d2491bcec58d464bf67774
+
+###

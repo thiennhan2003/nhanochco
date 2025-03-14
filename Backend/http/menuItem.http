@@ -1,0 +1,35 @@
+GET http://localhost:8080/api/v1/menu_Item
+###
+GET http://localhost:8080/api/v1/menu_Item/67d24b606dce2be089dfa775
+
+###
+POST http://localhost:8080/api/v1/menu_Item
+Content-Type: application/json
+
+{
+    "restaurant_id": "67d29501de219374eb2bfe32",
+    "name": "banh canh",
+    "description": "banh canhđâđâ ngon1dda122",
+    "price": 100000,
+    "category_id": "67d2cc2ab3985423bcdcf18a",
+    "image_url": "https://via.placeholder.com/150",
+    "is_active": true
+}
+
+###
+
+PUT http://localhost:8080/api/v1/users/67d16d9c5fa5d8164fc7c6aa
+Content-Type: application/json
+
+{
+    "username": "khachhang",
+    "fullname": "khachhang",
+    "email": "khachhang@gmail.com",
+    "password": "khachhang",
+    "role": "restaurant_owner"
+}
+
+###
+DELETE http://localhost:8080/api/v1/users/67d2491bcec58d464bf67774
+
+###

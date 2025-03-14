@@ -1,0 +1,2 @@
+# Bỏ qua thư mục cache của pnpm
+.pnpm-store/

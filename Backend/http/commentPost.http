@@ -1,0 +1,34 @@
+GET http://localhost:8080/api/v1/commentPost
+GET http://localhost:8080/api/v1/commentPost/1
+
+###
+GET http://localhost:8080/api/v1/comments/67d297234f6b95c0b6436a36
+
+###
+POST http://localhost:8080/api/v1/commentPost
+Content-Type: application/json
+
+{
+    "post_id": "67d2a6dae6ecb8bda7ab52c1",
+    "content": "hdang iu ghe ",
+    "likeCount": 1000,
+    "dislikeCount": 0
+}
+
+###
+
+PUT http://localhost:8080/api/v1/users/67d16d9c5fa5d8164fc7c6aa
+Content-Type: application/json
+
+{
+    "username": "khachhang",
+    "fullname": "khachhang",
+    "email": "khachhang@gmail.com",
+    "password": "khachhang",
+    "role": "restaurant_owner"
+}
+
+###
+DELETE http://localhost:8080/api/v1/users/67d2491bcec58d464bf67774
+
+###

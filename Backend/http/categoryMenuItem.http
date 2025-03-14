@@ -1,0 +1,26 @@
+### Lấy tất cả danh mục món ăn
+GET http://localhost:8080/api/v1/categoryMenuItem
+
+### Lấy danh mục món ăn theo ID
+GET http://localhost:8080/api/v1/categoryMenuItem/1
+
+### Tạo danh mục món ăn mới
+POST http://localhost:8080/api/v1/categoryMenuItem
+Content-Type: application/json
+
+{
+    "category_name": "Món quay",
+    "description": "quay ngon"
+}
+
+### Cập nhật danh mục món ăn
+PUT http://localhost:8080/api/v1/categoryMenuItem/[id]
+Content-Type: application/json
+
+{
+    "category_name": "Món quay",
+    "description": "quay ngon cập nhật"
+}
+
+### Xóa danh mục món ăn
+DELETE http://localhost:8080/api/v1/categoryMenuItem/[id]

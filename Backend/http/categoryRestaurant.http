@@ -1,0 +1,26 @@
+### Lấy tất cả danh mục
+GET http://localhost:8080/api/v1/categoryRestaurant
+
+### Lấy danh mục theo ID
+GET http://localhost:8080/api/v1/categoryRestaurant/1
+
+### Tạo danh mục mới
+POST http://localhost:8080/api/v1/categoryRestaurant
+Content-Type: application/json
+
+{
+    "category_name": "Món Á",
+    "description": "Các món ăn châu Á"
+}
+
+### Cập nhật danh mục
+PUT http://localhost:8080/api/v1/categoryRestaurant/67d2491bcec58d464bf67774
+Content-Type: application/json
+
+{
+    "category_name": "Món Âu",
+    "description": "Các món ăn châu Âu"
+}
+
+### Xóa danh mục
+DELETE http://localhost:8080/api/v1/categoryRestaurant/67d2491bcec58d464bf67774

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import userModel from '../models/user.model';
 import { IUserCreate } from '../types/model';
 import { ObjectId } from 'mongoose';
+import bcrypt from 'bcryptjs'; // Replace 'bcrypt' with 'bcryptjs'
 
 
 
@@ -46,14 +47,18 @@ const getUserById = async (id: string) => {
     return user;
 }
 const createUser = async (payload: any) => {
-  const user = await new userModel(payload)
-  await user.save();
-  return user; 
-}
+    // Tạo người dùng mới
+    const user = new userModel(payload);
+
+    // Lưu người dùng, middleware sẽ tự động mã hóa mật khẩu
+    await user.save();
+
+    return user;
+};
 const updateUserById = async(id: string, payload: any) => {
   const user = await getUserById(id);
 
-  if (payload.username !== user.username) {
+  if (payload.username && payload.username !== user.username) { // Check if username is being updated
       const userExist = await userModel.findOne({ username: payload.username });
       if (userExist) {
           throw createError(400, 'User already exists');

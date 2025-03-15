@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
-import app from "./app";
+import express from 'express';
+import userRoutes from './routes/v1/userRoute';
 import { env } from "./helpers/env.helper";
+
+const app = express();
+app.use(express.json());
+
 const PORT = env.PORT;
 
 const mongooseDbOptions = {
@@ -22,3 +27,14 @@ const mongooseDbOptions = {
     .catch((err) => {
       console.error("Failed to Connect to MongoDB", err);
     });
+
+// Use routes
+app.use('/api/v1', userRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    res.status(err.status || 500).json({
+        statusCode: err.status || 500,
+        message: err.message || 'Internal Server Error',
+    });
+});

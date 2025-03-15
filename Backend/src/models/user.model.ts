@@ -1,20 +1,24 @@
 import { Schema , model } from "mongoose";
+import bcrypt from "bcryptjs";
+import { TUserEntity } from "../types/model";
 
-const userSchema = new Schema({
+const saltRounds = 10;
+
+const userSchema = new Schema<TUserEntity>({
     username:{
         type:String,
         trim:true,
         required:[true,"Username is required"],
         unique:true,
         minlength:[3,"Username must be at least 3 characters long"],
-        maxlength:[50,"Username must be less than 20 characters long"],
+        maxlength:[50,"Username must be less than 50 characters long"], // Fixed message
     },
     fullname:{
         type:String,
         trim:true,
         required:[true,"Fullname is required"],
         minlength:[3,"Fullname must be at least 3 characters long"],
-        maxlength:[100,"Fullname must be less than 20 characters long"],
+        maxlength:[100,"Fullname must be less than 100 characters long"], // Fixed message
     },
     email:{
         type:String,
@@ -43,5 +47,24 @@ const userSchema = new Schema({
         collection: "users",
     }
 )
+
+//Middleware pre save ở lớp database
+//trước khi data được lưu xuống --> mã hóa mật khẩu
+userSchema.pre('save', async function (next) {
+    const staff = this;
+
+    // Kiểm tra nếu mật khẩu đã được mã hóa
+    if (!staff.isModified('password')) {
+        return next();
+    }
+
+    console.log("Original password:", staff.password); // Debug log
+    const hash = bcrypt.hashSync(staff.password, saltRounds);
+    console.log("Hashed password:", hash); // Debug log
+
+    staff.password = hash;
+
+    next();
+});
 
 export default model("User", userSchema);

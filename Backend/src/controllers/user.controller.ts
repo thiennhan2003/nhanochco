@@ -2,7 +2,9 @@ import { Request, Response ,NextFunction} from 'express';
 import createError from 'http-errors';
 import usersService from '../services/users.service';
 import { sendJsonSuccess, httpStatus } from '../helpers/reponse.helper';
-
+import userModel from '../models/user.model';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -49,10 +51,62 @@ const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
         next(error);
     }
 }
+
+const login = async (req, res, next) => {
+    const { email, password } = req.body;
+
+    try {
+        console.log("Login attempt with email:", email); // Debug log
+        const user = await userModel.findOne({ email });
+        console.log("User found:", user); // Debug log
+
+        if (!user) {
+            throw createError(404, 'User not found');
+        }
+
+        console.log("Password provided:", password); // Debug log
+        console.log("Password in database:", user.password); // Debug log
+
+        const isMatch = bcrypt.compareSync(password, user.password);
+        console.log("Password match result:", isMatch); // Debug log
+
+        if (!isMatch) {
+            throw createError(401, 'Invalid credentials');
+        }
+
+        const token = jwt.sign({ _id: user._id, email: user.email }, process.env.JWT_SECRET, {
+            expiresIn: '1d',
+        });
+
+        res.json({ token });
+    } catch (err) {
+        next(err);
+    }
+};
+
+const getProfile = async (req, res, next) => {
+    try {
+        console.log("Fetching profile for user ID:", req.user._id); // Debug log
+        const user = await userModel.findById(req.user._id);
+        console.log("User profile found:", user); // Debug log
+
+        if (!user) {
+            throw createError(404, 'User not found');
+        }
+
+        res.json(user);
+    } catch (err) {
+        console.error("Error fetching profile:", err); // Debug log
+        next(err);
+    }
+};
+
 export default {
     getAllUsers,
     getUserById,
     createUser,
     updateUser,
     deleteUser,
+    login,
+    getProfile,
 }

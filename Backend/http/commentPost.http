@@ -9,6 +9,7 @@ POST http://localhost:8080/api/v1/commentPost
 Content-Type: application/json
 
 {
+    "user_id": "67d24af2cec58d464bf6777a",
     "post_id": "67d2a6dae6ecb8bda7ab52c1",
     "content": "hdang iu ghe ",
     "likeCount": 1000,

@@ -4,9 +4,30 @@ import categoryRestaurantModel from '../models/categoryRestaurant.model';
 // import { IcategoryRestaurantCreate } from '../types/model';
 import { ObjectId } from 'mongoose';
 
-const getAllcategoryRestaurants = async () => {
-  const categoryRestaurants = await categoryRestaurantModel.find();
-  return categoryRestaurants;
+const getAllcategoryRestaurants = async (query:any) => {
+  const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
+          
+              let sortObject = {};
+              let where = {};
+              const sortType = query.sort_type || 'desc';
+              const sortBy = query.sort_by || 'createdAt';
+              sortObject = { ...sortObject, [sort_by]: sort_type === 'desc' ? -1 : 1 };
+              const count = await categoryRestaurantModel.countDocuments(where);
+  const categoryRestaurants = await categoryRestaurantModel
+  .find(where)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({...sortObject})
+    // .populate('user_id', 'username fullname')
+    return {
+      categoryRestaurants,
+      //Để phân trang
+      pagination:{
+          totalRecord: count,
+          limit,
+          page
+      }
+    };
 };
 
 const getcategoryRestaurantById = async (id: string) => {

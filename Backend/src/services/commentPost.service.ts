@@ -6,13 +6,34 @@ import restaurantModel from '../models/restaurant.model';
 import commentPostModel from '../models/commentPost.model';
 import postModel from '../models/post.model';
 
-const getAllcomments = async () => {
-    const comments = await commentPostModel.find()
+const getAllcomments = async (query:any) => {
+    const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
+    
+        let sortObject = {};
+        let where = {};
+        const sortType = query.sort_type || 'desc';
+        const sortBy = query.sort_by || 'createdAt';
+        sortObject = { ...sortObject, [sort_by]: sort_type === 'desc' ? -1 : 1 };
+        const count = await commentPostModel.countDocuments(where);
+    const comments = await commentPostModel
+    .find(where)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({...sortObject})
+    .populate('user_id', 'username fullname')
 //     .populate({
 //       path: 'comments',
 //       select: 'content createdAt target_type'
 //   });
-    return comments;
+return {
+    comments,
+    //Để phân trang
+    pagination:{
+        totalRecord: count,
+        limit,
+        page
+    }
+  };
   };
   
   const getcommentById = async (id: string) => {

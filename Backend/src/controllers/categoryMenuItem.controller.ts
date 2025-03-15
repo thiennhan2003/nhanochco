@@ -6,7 +6,7 @@ import { sendJsonSuccess, httpStatus } from '../helpers/reponse.helper';
 
 const getAllcategoryMenuItems = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const categoryMenuItems = await categoryMenuItemservice.getAllcategoryMenuItems(); 
+        const categoryMenuItems = await categoryMenuItemservice.getAllcategoryMenuItems(req.query); 
         sendJsonSuccess(res, categoryMenuItems, httpStatus.OK.message, httpStatus.OK.statusCode);
     } catch (error) {
         next(error);

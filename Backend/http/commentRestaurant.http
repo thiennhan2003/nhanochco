@@ -8,8 +8,8 @@ GET http://localhost:8080/api/v1/commentRestaurant/67d297234f6b95c0b6436a36
 POST http://localhost:8080/api/v1/commentRestaurant
 Content-Type: application/json
 
-{
-    "restaurant_id": "67d29501de219374eb2bfe32",
+{   "user_id": "67d24af2cec58d464bf6777a",
+    "restaurant_id": "67d2c923eefa280c9dbff4ee",
     "content": "hdang iu ghe ",
     "likeCount": 1000,
     "dislikeCount": 0

@@ -4,9 +4,29 @@ import categoryMenuItemModel from '../models/categoryMenuItem.model';
 // import { IcategoryMenuItemCreate } from '../types/model';
 import { ObjectId } from 'mongoose';
 
-const getAllcategoryMenuItems = async () => {
-  const categoryMenuItems = await categoryMenuItemModel.find();
-  return categoryMenuItems;
+const getAllcategoryMenuItems = async (query:any) => {
+  const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
+            
+                let sortObject = {};
+                let where = {};
+                const sortType = query.sort_type || 'desc';
+                const sortBy = query.sort_by || 'createdAt';
+                sortObject = { ...sortObject, [sort_by]: sort_type === 'desc' ? -1 : 1 };
+                const count = await categoryMenuItemModel.countDocuments(where);
+  const categoryMenuItems = await categoryMenuItemModel.find(where)
+  .skip((page - 1) * limit)
+  .limit(limit)
+  .sort({...sortObject})
+  // .populate('user_id', 'username fullname')
+  return {
+    categoryMenuItems,
+    //Để phân trang
+    pagination:{
+        totalRecord: count,
+        limit,
+        page
+    }
+  };
 };
 
 const getcategoryMenuItemById = async (id: string) => {

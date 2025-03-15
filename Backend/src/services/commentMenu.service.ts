@@ -7,13 +7,33 @@ import commentMenuModel from '../models/commentMenu.model';
 // import postModel from '../models/post.model';
 import menuItemModel from '../models/menuItem.model';
 
-const getAllcomments = async () => {
-    const comments = await commentMenuModel.find()
+const getAllcomments = async (query:any) => {
+    const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
+        
+            let sortObject = {};
+            let where = {};
+            const sortType = query.sort_type || 'desc';
+            const sortBy = query.sort_by || 'createdAt';
+            sortObject = { ...sortObject, [sort_by]: sort_type === 'desc' ? -1 : 1 };
+            const count = await commentMenuModel.countDocuments(where);
+    const comments = await commentMenuModel.find(where)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({...sortObject})
+    .populate('user_id', 'username fullname')
 //     .populate({
 //       path: 'comments',
 //       select: 'content createdAt target_type'
 //   });
-    return comments;
+return {
+    comments,
+    //Để phân trang
+    pagination:{
+        totalRecord: count,
+        limit,
+        page
+    }
+  };
   };
   
   const getcommentById = async (id: string) => {

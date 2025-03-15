@@ -5,6 +5,10 @@ const commentMenuSchema = new Schema({
         type:Schema.Types.ObjectId,
         ref:"MenuItem",
     },
+    user_id:{
+        type:Schema.Types.ObjectId,
+        ref:"User",
+    },
     content:{
         type:String,
         maxlength:[255,"Password must be less than 255 characters long"],

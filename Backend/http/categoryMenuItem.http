@@ -9,7 +9,7 @@ POST http://localhost:8080/api/v1/categoryMenuItem
 Content-Type: application/json
 
 {
-    "category_name": "Món quay",
+    "category_name": "Thit quay",
     "description": "quay ngon"
 }
 

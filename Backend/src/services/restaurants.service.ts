@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import restaurantModel from '../models/restaurant.model';
 
 import { ObjectId } from 'mongoose';
+import categoryRestaurantModel from '../models/categoryRestaurant.model';
 
 const getRestaurantById = async (id: string) => {
   const restaurant = await restaurantModel
@@ -18,14 +19,47 @@ const getRestaurantById = async (id: string) => {
   return restaurant;
 }
 
-const getAllRestaurants = async () => {
+const getAllRestaurants = async (query:any) => {
+  const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
+
+  let sortObject = {};
+  let where = {};
+  const sortType = query.sort_type || 'desc';
+  const sortBy = query.sort_by || 'createdAt';
+  sortObject = { ...sortObject, [sort_by]: sort_type === 'desc' ? -1 : 1 };
+
+  // Search by username
+  if (query.name && query.name.length > 0) {
+      where = { ...where, name: { $regex: query.name, $options: 'i' } };
+  }
+  //tim kiem theo category
+  if (query.category_name && query.category_name.length > 0) {
+    const categories = await categoryRestaurantModel.find({
+      category_name: { $regex: query.category_name, $options: 'i' },
+    });
+
+    const categoryIds = categories.map((category) => category._id);
+    where = { ...where, category_id: { $in: categoryIds } };
+  }
+  const count = await restaurantModel.countDocuments(where);
   const restaurants = await restaurantModel
-      .find()
+      .find(where)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({...sortObject})
       .populate('menu_id') // Thêm dòng này để nạp thông tin menu items
       .populate('owner_id')
       .populate('category_id')
       .populate('comments');
-  return restaurants;
+      return {
+        restaurants,
+        //Để phân trang
+        pagination:{
+            totalRecord: count,
+            limit,
+            page
+        }
+      };
 }
 const createrestaurant = async (payload: any) => {
   try {

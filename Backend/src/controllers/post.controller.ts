@@ -6,7 +6,7 @@ import { sendJsonSuccess, httpStatus } from '../helpers/reponse.helper';
 
 const getAllposts = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const posts = await postsService.getAllposts(); 
+        const posts = await postsService.getAllposts(req.query); 
         sendJsonSuccess(res, posts, httpStatus.OK.message, httpStatus.OK.statusCode);
     } catch (error) {
         next(error);

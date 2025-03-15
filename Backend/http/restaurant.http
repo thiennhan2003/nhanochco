@@ -12,7 +12,7 @@ Content-Type: application/json
     "address": "123 nguyen van đâđâlinh",
     "phone": "09090909092233",
     "description": "nha hanđâđâg ngon221111",
-    "category_id": "67d2c7907de6e31515acd973",
+    "category_id": "67d2cbb1b3985423bcdcf188",
     "average_rating": 4.5,
     "image_url": "https://via.placeholder.com/150",
     "is_active": true

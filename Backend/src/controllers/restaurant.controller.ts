@@ -2,11 +2,12 @@ import { Request, Response ,NextFunction} from 'express';
 import createError from 'http-errors';
 import restaurantsService from '../services/restaurants.service';
 import { sendJsonSuccess, httpStatus } from '../helpers/reponse.helper';
+import { Query } from 'mongoose';
 
 
 const getAllRestaurants = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const restaurants = await restaurantsService.getAllRestaurants(); 
+        const restaurants = await restaurantsService.getAllRestaurants(req.query); 
         sendJsonSuccess(res, restaurants, httpStatus.OK.message, httpStatus.OK.statusCode);
     } catch (error) {
         next(error);

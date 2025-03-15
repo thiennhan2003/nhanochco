@@ -4,13 +4,34 @@ import postModel from '../models/post.model';
 
 import { ObjectId } from 'mongoose';
 
-const getAllposts = async () => {
-    const posts = await postModel.find().populate('user_id', 'username fullname')
+const getAllposts = async (query:any) => {
+  const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
+
+  let sortObject = {};
+  let where = {};
+  const sortType = query.sort_type || 'desc';
+  const sortBy = query.sort_by || 'createdAt';
+  sortObject = { ...sortObject, [sort_by]: sort_type === 'desc' ? -1 : 1 };
+    const posts = await postModel
+    .find(where)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({...sortObject})
+    .populate('user_id', 'username fullname')
     .populate({
         path: 'comments',
         select: 'content createdAt target_type'
     });
-    return posts;
+    const count = await postModel.countDocuments(where);
+        return {
+          posts,
+          //Để phân trang
+          pagination:{
+              totalRecord: count,
+              limit,
+              page
+          }
+        };
   };
   
   const getpostById = async (id: string) => {

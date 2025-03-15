@@ -11,7 +11,7 @@ Content-Type: application/json
     "name": "banh canh",
     "description": "banh canhđâđâ ngon1dda122",
     "price": 100000,
-    "category_id": "67d2cc2ab3985423bcdcf18a",
+    "category_id": "67d4f60ed6dd01e60bf9b8a2",
     "image_url": "https://via.placeholder.com/150",
     "is_active": true
 }

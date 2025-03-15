@@ -6,7 +6,7 @@ import { sendJsonSuccess, httpStatus } from '../helpers/reponse.helper';
 
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = await usersService.getAllUsers(); 
+        const users = await usersService.getAllUsers(req.query); 
         sendJsonSuccess(res, users, httpStatus.OK.message, httpStatus.OK.statusCode);
     } catch (error) {
         next(error);

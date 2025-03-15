@@ -4,9 +4,37 @@ import userModel from '../models/user.model';
 import { IUserCreate } from '../types/model';
 import { ObjectId } from 'mongoose';
 
-const getAllUsers = async () => {
-  const users = await userModel.find();
-  return users;
+
+
+const getAllUsers = async (query: any) => {
+  const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
+
+  let sortObject = {};
+  let where = {};
+  const sortType = query.sort_type || 'desc';
+  const sortBy = query.sort_by || 'createdAt';
+  sortObject = { ...sortObject, [sort_by]: sort_type === 'desc' ? -1 : 1 };
+
+  // Search by username
+  if (query.username && query.username.length > 0) {
+      where = { ...where, username: { $regex: query.username, $options: 'i' } };
+  }
+
+  const users = await userModel
+    .find(where)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({...sortObject});
+    const count = await userModel.countDocuments(where);
+    return {
+      users,
+      //Để phân trang
+      pagination:{
+          totalRecord: count,
+          limit,
+          page
+      }
+    };
 };
 
 const getUserById = async (id: string) => {

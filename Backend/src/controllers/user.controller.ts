@@ -74,11 +74,21 @@ const login = async (req, res, next) => {
             throw createError(401, 'Invalid credentials');
         }
 
-        const token = jwt.sign({ _id: user._id, email: user.email }, process.env.JWT_SECRET, {
-            expiresIn: '1d',
-        });
+        // Tạo accessToken
+        const accessToken = jwt.sign(
+            { _id: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' } // Access token expires in 15 minutes
+        );
 
-        res.json({ token });
+        // Tạo refreshToken
+        const refreshToken = jwt.sign(
+            { _id: user._id, email: user.email },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: '7d' } // Refresh token expires in 7 days
+        );
+
+        res.json({ accessToken, refreshToken }); // Trả về cả accessToken và refreshToken
     } catch (err) {
         next(err);
     }

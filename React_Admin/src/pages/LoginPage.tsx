@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Form, Input, Flex, message } from 'antd';
 import axios from 'axios'
-import { env } from '../constanst/getEnvs';
+import { env } from '../constants/getEnvs';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useNavigate } from 'react-router';
 
@@ -30,33 +30,54 @@ const LoginPage: React.FC = () => {
          { email: values.email, password: values.password },
        );
        console.log('<<=== 🚀 responseLogin ===>>',responseLogin);
-       if(responseLogin.status === 200){
-         // 1. luu tokens
-         setTokens(responseLogin.data.data)
-         // 2. Lấy thông tin Profile của user vừa login thành công
-         const responseProfile = await axios.get(
-          `${env.API_URL}/v1/auth/get-profile`, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${responseLogin.data.data.accessToken}`,
-            },
+       if (responseLogin.status === 200) {
+         const { accessToken, refreshToken } = responseLogin.data; // Adjusted to match the response structure
+         setTokens({ accessToken, refreshToken });
+         console.log('Access Token:', accessToken);
 
-          });
-         
-         //3. Lưu thông tin profile vào local Storage
-         if(responseProfile.status === 200){
-            setUser(responseProfile.data.data);
-            //ToDO: navigate to dashboard
-          }
-   
-         //4. Chuyển hướng đến trang dashboard
-          navigate('/')
+         try {
+           const responseProfile = await axios.get(
+             `${env.API_URL}/v1/auth/get-profile`, {
+               headers: {
+                 'Content-Type': 'application/json',
+                 'Authorization': `Bearer ${accessToken}`,
+               },
+             });
+           console.log('<<=== 🚀 responseProfile ===>>', responseProfile);
 
-       }else{
-        messageApi.open({
-          type: 'error',
-          content: 'Username or password invalid',
-        });
+           if (responseProfile.status === 200) {
+             const userProfile = responseProfile.data; // Adjusted to match the response structure
+             console.log('User Role:', userProfile.role);
+
+             if (userProfile.role !== 'admin') {
+               messageApi.open({
+                 type: 'error',
+                 content: 'Access denied. Admin role required.',
+               });
+               return;
+             }
+
+             setUser(userProfile);
+             navigate('/');
+           } else {
+             console.error('Failed to fetch profile:', responseProfile);
+             messageApi.open({
+               type: 'error',
+               content: 'Failed to fetch user profile.',
+             });
+           }
+         } catch (profileError) {
+           console.error('Error fetching profile:', profileError);
+           messageApi.open({
+             type: 'error',
+             content: 'Error fetching user profile.',
+           });
+         }
+       } else {
+         messageApi.open({
+           type: 'error',
+           content: 'Username or password invalid',
+         });
        }
     } catch (error) {
       console.log('<<=== 🚀 error ===>>',error);
@@ -77,7 +98,7 @@ const LoginPage: React.FC = () => {
       name="login"
       initialValues={{ 
         remember: true,
-        email: 'admin@gmail.com',
+        email: 'mikocutecute@gmail.com',
         password: '123456789'
        }}
       style={{ maxWidth: 360 }}

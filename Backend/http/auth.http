@@ -2,8 +2,8 @@ POST http://localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-    "email": "admin@gmail.com",
-    "password": "123456789"
+    "email": "mikocute@gmail.com",
+    "password": "1234567890"
 }
 
 ###
@@ -14,8 +14,12 @@ Content-Type: application/json
     "email": "khachhang10@gmail.com",
     "password": "khachhang2"
 }
+###
+curl -X POST http://localhost:8080/api/v1/auth/login \
+-H "Content-Type: application/json" \
+-d '{"email": "miko@gmail.com", "password": "123456789"}'
 
 ### Get Profile
 GET http://localhost:8080/api/v1/auth/get-profile
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2Q1NWFlMzU4NTVkYTBmMDIzZGQ4ZTYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc0MjA5NDM0OSwiZXhwIjoxNzQyMDk1MjQ5fQ.QOTnZYKyrDBQIoCei-kBedw1PH3hvyuBsHRJz-UYZbs
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2Q2NDkxOWY3MzQ4MTI5NjU3MWUwZGMiLCJlbWFpbCI6Im1pa29AZ21haWwuY29tIiwiaWF0IjoxNzQyMDk3ODU4LCJleHAiOjE3NDIwOTg3NTh9.qXC_iHMHYJ5l9YpltmUpQhEO_qcHE6jGkeN6tQF-35c

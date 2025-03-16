@@ -56,9 +56,9 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
-        console.log("Login attempt with email:", email); // Debug log
+console.log("Login attempt with email:", email); // Debug log
         const user = await userModel.findOne({ email });
-        console.log("User found:", user); // Debug log
+console.log("User found:", user); // Debug log
 
         if (!user) {
             throw createError(404, 'User not found');
@@ -68,7 +68,7 @@ const login = async (req, res, next) => {
         console.log("Password in database:", user.password); // Debug log
 
         const isMatch = bcrypt.compareSync(password, user.password);
-        console.log("Password match result:", isMatch); // Debug log
+console.log("Password match result:", isMatch); // Debug log
 
         if (!isMatch) {
             throw createError(401, 'Invalid credentials');
@@ -76,8 +76,8 @@ const login = async (req, res, next) => {
 
         // Tạo accessToken
         const accessToken = jwt.sign(
-            { _id: user._id, email: user.email },
-            process.env.JWT_SECRET,
+{ _id: user._id, email: user.email },
+process.env.JWT_SECRET,
             { expiresIn: '15m' } // Access token expires in 15 minutes
         );
 
@@ -96,9 +96,9 @@ const login = async (req, res, next) => {
 
 const getProfile = async (req, res, next) => {
     try {
-        console.log("Fetching profile for user ID:", req.user._id); // Debug log
+console.log("Fetching profile for user ID:", req.user._id); // Debug log
         const user = await userModel.findById(req.user._id);
-        console.log("User profile found:", user); // Debug log
+console.log("User profile found:", user); // Debug log
 
         if (!user) {
             throw createError(404, 'User not found');
@@ -106,7 +106,7 @@ const getProfile = async (req, res, next) => {
 
         res.json(user);
     } catch (err) {
-        console.error("Error fetching profile:", err); // Debug log
+console.error("Error fetching profile:", err); // Debug log
         next(err);
     }
 };
@@ -117,6 +117,6 @@ export default {
     createUser,
     updateUser,
     deleteUser,
-    login,
+login,
     getProfile,
 }

@@ -35,6 +35,7 @@ app.use("/api/v1", commentMenuRoute);
 app.use("/api/v1", commentRestaurantRoute);
 app.use("/api/v1", categoryRestaurantRoute);
 app.use("/api/v1", categoryMenuItemRoute);
+app.use(cors());
 // Error handling
 app.use((req: Request, res: Response, next: NextFunction) => {
     next(createError(404));

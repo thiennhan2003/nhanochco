@@ -58,7 +58,7 @@ userSchema.pre('save', async function (next) {
         return next();
     }
 
-    console.log("Original password:", staff.password); // Debug log
+    console.log("Original password before hashing:", staff.password); // Debug log
     const hash = bcrypt.hashSync(staff.password, saltRounds);
     console.log("Hashed password:", hash); // Debug log
 

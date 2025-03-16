@@ -11,6 +11,7 @@ const authMiddleware = (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     try {
+        console.log("JWT_SECRET:", process.env.JWT_SECRET); // Debug log
         console.log("Authorization token:", token); // Debug log
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log("Decoded token:", decoded); // Debug log

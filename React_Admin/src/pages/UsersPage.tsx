@@ -10,6 +10,7 @@ import { axiosClient } from "../libs/axiosClient";
 import { env } from "../constants/getEnvs";
 import { useNavigate, useSearchParams } from "react-router";
 import { useEffect, useState } from "react";
+import axios from 'axios'; // Ensure axios is imported for type narrowing
 
 interface DataType {
     _id: string;
@@ -213,6 +214,67 @@ export default function UsersPage() {
         },
     ];
 
+    const [formAdd] = Form.useForm();
+    const [isModalAddOpen, setIsModalAddOpen] = useState(false);
+
+    const addUser = async (formData: Omit<DataType, '_id'> & { password: string }) => {
+        try {
+            const payload = {
+                username: formData.username,
+                email: formData.email,
+                fullname: formData.fullname,
+                role: formData.role,
+                avatarUrl: formData.avatarUrl || "https://i.pinimg.com/originals/2a/d9/19/2ad919f562101bd2cbd1b85b78852abf.jpg", // Default avatar
+                active: formData.active ?? false, // Default active state
+                password: formData.password, // Include password in the payload
+            };
+            console.log('Payload being sent:', payload); // Log the payload for debugging
+            const response = await axiosClient.post(`${env.API_URL}/v1/users`, payload);
+            console.log('Server response:', response.data); // Log the server response
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error('Error adding user:', error.response?.data || error.message); // Log detailed error
+                throw new Error(error.response?.data?.message || 'Failed to add user');
+            } else {
+                console.error('Unexpected error:', error); // Handle non-Axios errors
+                throw new Error('An unexpected error occurred');
+            }
+        }
+    };
+
+    const mutationAdd = useMutation({
+        mutationFn: addUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: KEYs.getUsers() });
+            messageApi.open({
+                type: 'success',
+                content: 'User added successfully!',
+            });
+            setIsModalAddOpen(false);
+            formAdd.resetFields();
+        },
+        onError: (error) => {
+            if (axios.isAxiosError(error)) {
+                console.error('Add user error:', error.response?.data || error.message); // Log server error
+                messageApi.open({
+                    type: 'error',
+                    content: `Failed to add user: ${error.response?.data?.message || 'Internal Server Error'}`,
+                });
+            } else {
+                console.error('Unexpected error:', error); // Handle non-Axios errors
+                messageApi.open({
+                    type: 'error',
+                    content: 'An unexpected error occurred while adding the user.',
+                });
+            }
+        }
+    });
+
+    const onFinishAdd: FormProps<Omit<DataType, '_id'> & { password: string }>['onFinish'] = async (values) => {
+        await mutationAdd.mutateAsync(values);
+    };
+
     return (
         <>
             {contextHolder}
@@ -220,9 +282,7 @@ export default function UsersPage() {
             <Card
                 variant="borderless"
                 title="Users List"
-                extra={<Button onClick={() => {
-                    console.log('Add new user');
-                }} icon={<PlusOutlined />} type="primary">Add New</Button>}
+                extra={<Button onClick={() => setIsModalAddOpen(true)} icon={<PlusOutlined />} type="primary">Add New</Button>}
             >
                 <Flex vertical gap="middle">
                     <Table<DataType>
@@ -298,6 +358,77 @@ export default function UsersPage() {
                         <Input />
                     </Form.Item>
                     <Form.Item<DataType>
+                        label="Active"
+                        name="active"
+                        valuePropName="checked"
+                    >
+                        <Switch />
+                    </Form.Item>
+                </Form>
+            </Modal>
+            <Modal
+                title="Add User"
+                centered
+                open={isModalAddOpen}
+                onOk={() => {
+                    formAdd.submit();
+                }}
+                onCancel={() => setIsModalAddOpen(false)}
+            >
+                <Form
+                    name="formAdd"
+                    form={formAdd}
+                    labelCol={{ span: 8 }}
+                    wrapperCol={{ span: 16 }}
+                    style={{ maxWidth: 600 }}
+                    initialValues={{}} // No pre-filled values
+                    onFinish={onFinishAdd}
+                    autoComplete="off"
+                >
+                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
+                        label="Username"
+                        name="username"
+                        rules={[{ required: true, message: 'Please input the username!' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
+                        label="Email"
+                        name="email"
+                        rules={[{ required: true, message: 'Please input the email!' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
+                        label="Full Name"
+                        name="fullname"
+                    >
+                        <Input />
+                    </Form.Item>
+                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
+                        label="Role"
+                        name="role"
+                        rules={[{ required: true, message: 'Please select the role!' }]}
+                    >
+                        <Select>
+                            <Select.Option value="customer">Customer</Select.Option>
+                            <Select.Option value="restaurant_owner">Restaurant Owner</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
+                        label="Avatar URL"
+                        name="avatarUrl"
+                    >
+                        <Input />
+                    </Form.Item>
+                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
+                        label="Password"
+                        name="password"
+                        rules={[{ required: true, message: 'Please input the password!' }]}
+                    >
+                        <Input.Password />
+                    </Form.Item>
+                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
                         label="Active"
                         name="active"
                         valuePropName="checked"

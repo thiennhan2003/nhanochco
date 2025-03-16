@@ -21,11 +21,12 @@ PUT http://localhost:8080/api/v1/users/67d16d9c5fa5d8164fc7c6aa
 Content-Type: application/json
 
 {
-    "username": "khachhang",
-    "fullname": "khachhang",
-    "email": "khachhang@gmail.com",
-    "password": "khachhang",
-    "role": "restaurant_owner"
+    "username": "miko100001",
+    "fullname": "miko10",
+    "email": "mikocute111@gmail.com",
+    "password": "12345678901",
+    "role": "customer",
+    "avatar": "https://cellphones.com.vn/sforum/wp-content/uploads/2021/12/yae-1.png"
 }
 
 ###

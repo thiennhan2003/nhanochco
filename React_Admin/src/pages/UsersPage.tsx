@@ -130,7 +130,12 @@ export default function UsersPage() {
 
     useEffect(() => {
         if (queryUser.isSuccess && queryUser.data) {
-            formEdit.setFieldsValue(queryUser?.data?.data);
+            const userData = queryUser?.data?.data;
+            // Nếu avatarUrl không tồn tại, sử dụng giá trị mặc định
+            formEdit.setFieldsValue({
+                ...userData,
+                avatarUrl: userData.avatarUrl || "https://i.pinimg.com/originals/2a/d9/19/2ad919f562101bd2cbd1b85b78852abf.jpg",
+            });
         }
     }, [selectedId, formEdit, queryUser?.data, queryUser.isSuccess]);
 
@@ -139,8 +144,11 @@ export default function UsersPage() {
             title: 'Avatar',
             dataIndex: 'avatarUrl',
             key: 'avatarUrl',
-            render: (text) => <Avatar 
-            src={text || 'https://cdn.donmai.us/original/a7/29/a729ebf5be0731b4f1f27a3e15a325b3.jpg'} />,
+            render: (text) => (
+                <Avatar 
+                    src={text || 'https://i.pinimg.com/originals/2a/d9/19/2ad919f562101bd2cbd1b85b78852abf.jpg'} 
+                />
+            ),
         },
         {
             title: 'Username',

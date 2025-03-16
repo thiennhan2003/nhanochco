@@ -12,4 +12,6 @@ export interface TUserEntity {
     email: string;
     password: string;
     role: 'customer' | 'restaurant_owner' | 'admin';
-  }
+    active?: boolean; // Thêm thuộc tính active, có thể không bắt buộc
+    avatar?: string;  // Thêm thuộc tính avatar, có thể không bắt buộc
+}

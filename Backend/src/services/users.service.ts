@@ -55,20 +55,35 @@ const createUser = async (payload: any) => {
 
     return user;
 };
-const updateUserById = async(id: string, payload: any) => {
+const updateUserById = async (id: string, payload: any) => {
   const user = await getUserById(id);
 
-  if (payload.username && payload.username !== user.username) { // Check if username is being updated
-      const userExist = await userModel.findOne({ username: payload.username });
-      if (userExist) {
-          throw createError(400, 'User already exists');
-      }
+  // Check if username is being updated and ensure it's unique
+  if (payload.username && payload.username !== user.username) {
+    const userExist = await userModel.findOne({ username: payload.username });
+    if (userExist) {
+      throw createError(400, 'Username already exists');
+    }
   }
 
-  Object.assign(user, payload); 
+  // Check if email is being updated and ensure it's unique
+  if (payload.email && payload.email !== user.email) {
+    const emailExist = await userModel.findOne({ email: payload.email });
+    if (emailExist) {
+      throw createError(400, 'Email already exists');
+    }
+  }
+
+  // Only update fields that are provided in the payload
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] !== undefined) {
+      user[key] = payload[key];
+    }
+  });
+
   await user.save();
   return user;
-}
+};
 const deleteUserById = async (id: string) => {
 
     const user = await getUserById(id);

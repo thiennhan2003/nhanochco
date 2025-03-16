@@ -7,11 +7,12 @@ POST http://localhost:8080/api/v1/users
 Content-Type: application/json
 
 {
-    "username": "miko10000",
+    "username": "miko100001",
     "fullname": "miko10",
-    "email": "mikocute@gmail.com",
-    "password": "1234567890",
-    "role": "customer"
+    "email": "mikocute111@gmail.com",
+    "password": "12345678901",
+    "role": "customer",
+    "avatar": "https://i2.wp.com/images.genshin-builds.com/genshin/characters/yae_miko/image.png?strip=all&quality=75&w=256"
 }
 
 ###

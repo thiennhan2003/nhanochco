@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
-import { Outlet } from 'react-router';
+import { Outlet, useNavigate } from 'react-router'; // Sử dụng useNavigate thay vì Navigate
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -29,19 +29,20 @@ function getItem(
 }
 
 const items: MenuItem[] = [
-  getItem('Option 1', '1', <PieChartOutlined />),
-  getItem('Option 2', '2', <DesktopOutlined />),
-  getItem('User', 'sub1', <UserOutlined />, [
+  getItem('DashBoard', '', <PieChartOutlined />),
+  getItem('Restaurant', 'restaurants', <DesktopOutlined />),
+  getItem('Menu_item', 'menu_item', <UserOutlined />, [
     getItem('Tom', '3'),
     getItem('Bill', '4'),
     getItem('Alex', '5'),
   ]),
-  getItem('Team', 'sub2', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
-  getItem('Files', '9', <FileOutlined />),
+  getItem('Post', 'post', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
+  getItem('User', 'users', <FileOutlined />),
 ];
 
 const DefaultLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate(); // Hook để điều hướng
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -50,7 +51,15 @@ const DefaultLayout: React.FC = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
         <div className="demo-logo-vertical" />
-        <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items} />
+        <Menu
+          theme="dark"
+          defaultSelectedKeys={['1']}
+          mode="inline"
+          items={items}
+          onClick={({ key }) => {
+            navigate(`/${key}`); // Điều hướng đến đường dẫn tương ứng
+          }}
+        />
       </Sider>
       <Layout>
         <Header style={{ padding: 0, background: colorBgContainer }} />
@@ -67,7 +76,7 @@ const DefaultLayout: React.FC = () => {
               borderRadius: borderRadiusLG,
             }}
           >
-            <Outlet/>
+            <Outlet />
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>

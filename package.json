@@ -1,5 +1,6 @@
 {
 	"dependencies": {
-		"git-filter-repo": "^0.0.30"
+		"git-filter-repo": "^0.0.30",
+		"mongoose": "^8.12.1"
 	}
 }

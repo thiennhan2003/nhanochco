@@ -6,6 +6,7 @@ import Restaurants from "./components/Restaurants";
 import Posts from "./components/Posts";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import RestaurantsPage from './pages/RestaurantsPage'; // Import RestaurantsPage
 
 const App: React.FC = () => {
   return (
@@ -18,6 +19,7 @@ const App: React.FC = () => {
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/posts" element={<Posts />} />
+          <Route path="restaurants" element={<RestaurantsPage />} /> {/* Add route for RestaurantsPage */}
         </Routes>
         <Footer />
       </div>

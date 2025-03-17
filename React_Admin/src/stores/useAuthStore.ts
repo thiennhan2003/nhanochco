@@ -30,8 +30,14 @@ export const useAuthStore = create<TAuthStore>()(
         setTokens: (tokens: ITokens) => {
           set({ tokens });
         },
-        clearTokens: () => set({ tokens: null }),
+        clearTokens: () => {
+          console.log('Clearing tokens...'); // Log để kiểm tra
+          set({ tokens: null });
+          localStorage.removeItem('auth-storage'); // Xóa dữ liệu trong localStorage
+          console.log('Tokens cleared from state and localStorage'); // Log sau khi xóa
+        },
         setUser: (user: IUser |  null)=>{
+          console.log('Setting user:', user); // Log để kiểm tra
           set({ user });
         }
       }),

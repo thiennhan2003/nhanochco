@@ -9,6 +9,8 @@ import {
 import type { MenuProps } from 'antd';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
 import { Outlet, useNavigate } from 'react-router'; // Sử dụng useNavigate thay vì Navigate
+import UserInfo from '../components/UserInfo'; // Import UserInfo
+import ProtectedRoute from '../components/ProtectedRoute'; // Import ProtectedRoute
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -62,7 +64,9 @@ const DefaultLayout: React.FC = () => {
         />
       </Sider>
       <Layout>
-        <Header style={{ padding: 0, background: colorBgContainer }} />
+        <Header style={{ padding: 0, background: colorBgContainer, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingRight: '16px' }}>
+          <UserInfo /> {/* Thêm UserInfo vào Header */}
+        </Header>
         <Content style={{ margin: '0 16px' }}>
           <Breadcrumb style={{ margin: '16px 0' }}>
             <Breadcrumb.Item>User</Breadcrumb.Item>
@@ -76,7 +80,9 @@ const DefaultLayout: React.FC = () => {
               borderRadius: borderRadiusLG,
             }}
           >
-            <Outlet />
+            <ProtectedRoute>
+              <Outlet /> {/* Bọc Outlet bằng ProtectedRoute */}
+            </ProtectedRoute>
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>

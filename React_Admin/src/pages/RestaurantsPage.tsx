@@ -102,7 +102,6 @@ export default function RestaurantsPage() {
   const KEYs = {
     getRestaurants: () => ["restaurants", page, limit] as const,
     getRestaurant: (id: string) => ["restaurant", id] as const,
-    getCategories: () => ["categories"] as const,
     getOwners: () => ["owners"] as const,
   }
 
@@ -123,23 +122,16 @@ export default function RestaurantsPage() {
     queryFn: fetchRestaurants,
   })
 
-  // Fetch categories
-  const fetchCategories = async (): Promise<CategoryType[]> => {
-    const response = await axiosClientPublic.get("/categoryRestaurant")
-    console.log("Phản hồi từ API danh mục:", response.data)
-    return response.data.data // Trả về mảng từ data
-  }
-
-  const queryCategories = useQuery({
-    queryKey: KEYs.getCategories(),
-    queryFn: fetchCategories,
-  })
-
   // Fetch owners
   const fetchOwners = async (): Promise<OwnerType[]> => {
-    const response = await axiosClientPublic.get("/users?role=restaurant_owner")
-    console.log("Phản hồi từ API chủ sở hữu:", response.data)
-    return response.data.data.users // Trả về mảng users từ data
+    try {
+      const response = await axiosClientPublic.get("/users?role=restaurant_owner")
+      console.log("Phản hồi từ API chủ sở hữu:", response.data)
+      return response.data.data.users // Trả về mảng users từ data
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu chủ sở hữu:", error)
+      throw error
+    }
   }
 
   const queryOwners = useQuery({
@@ -281,6 +273,39 @@ export default function RestaurantsPage() {
     await mutationAdd.mutateAsync(values)
   }
 
+  // Extract categories from restaurants data
+  const getCategoryOptions = () => {
+    if (queryRestaurants.isLoading) return [<Select.Option key="" value="">Đang tải danh mục...</Select.Option>]
+    if (queryRestaurants.isError) return [<Select.Option key="" value="">Lỗi tải danh mục</Select.Option>]
+    if (!queryRestaurants.data?.length) return [<Select.Option key="" value="">Không có danh mục</Select.Option>]
+
+    // Lấy danh sách danh mục từ restaurants, loại bỏ trùng lặp
+    const categoriesMap = new Map<string, CategoryType>()
+    queryRestaurants.data.forEach((restaurant) => {
+      if (restaurant.category_id) {
+        categoriesMap.set(restaurant.category_id._id, restaurant.category_id)
+      }
+    })
+    const categories = Array.from(categoriesMap.values())
+    
+    return categories.map((category) => (
+      <Select.Option key={category._id} value={category._id}>
+        {category.category_name}
+      </Select.Option>
+    ))
+  }
+
+  const renderOwnerOptions = () => {
+    if (queryOwners.isLoading) return <Select.Option value="">Đang tải chủ sở hữu...</Select.Option>
+    if (queryOwners.isError) return <Select.Option value="">Lỗi tải chủ sở hữu</Select.Option>
+    if (!queryOwners.data?.length) return <Select.Option value="">Không có chủ sở hữu</Select.Option>
+    return queryOwners.data.map((owner: OwnerType) => (
+      <Select.Option key={owner._id} value={owner._id}>
+        {owner.username} ({owner.fullname})
+      </Select.Option>
+    ))
+  }
+
   // Table columns
   const columns: TableProps<RestaurantType>["columns"] = [
     {
@@ -354,29 +379,6 @@ export default function RestaurantsPage() {
     },
   ]
 
-  // Render dropdown options
-  const renderCategoryOptions = () => {
-    if (queryCategories.isLoading) return <Select.Option value="">Đang tải danh mục...</Select.Option>
-    if (queryCategories.isError) return <Select.Option value="">Lỗi tải danh mục</Select.Option>
-    if (!queryCategories.data?.length) return <Select.Option value="">Không có danh mục</Select.Option>
-    return queryCategories.data.map((category: CategoryType) => (
-      <Select.Option key={category._id} value={category._id}>
-        {category.category_name}
-      </Select.Option>
-    ))
-  }
-
-  const renderOwnerOptions = () => {
-    if (queryOwners.isLoading) return <Select.Option value="">Đang tải chủ sở hữu...</Select.Option>
-    if (queryOwners.isError) return <Select.Option value="">Lỗi tải chủ sở hữu</Select.Option>
-    if (!queryOwners.data?.length) return <Select.Option value="">Không có chủ sở hữu</Select.Option>
-    return queryOwners.data.map((owner: OwnerType) => (
-      <Select.Option key={owner._id} value={owner._id}>
-        {owner.username} ({owner.fullname})
-      </Select.Option>
-    ))
-  }
-
   return (
     <>
       {contextHolder}
@@ -441,7 +443,7 @@ export default function RestaurantsPage() {
             <TextArea rows={4} />
           </Form.Item>
           <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
-            <Select loading={queryCategories.isLoading}>{renderCategoryOptions()}</Select>
+            <Select loading={queryRestaurants.isLoading}>{getCategoryOptions()}</Select>
           </Form.Item>
           <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
             <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>
@@ -490,7 +492,7 @@ export default function RestaurantsPage() {
             <TextArea rows={4} />
           </Form.Item>
           <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
-            <Select loading={queryCategories.isLoading}>{renderCategoryOptions()}</Select>
+            <Select loading={queryRestaurants.isLoading}>{getCategoryOptions()}</Select>
           </Form.Item>
           <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
             <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>

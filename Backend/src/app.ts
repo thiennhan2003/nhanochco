@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
 import cors from "cors";
 import compression from "compression";
+import path from "path"; // Import the path module
 
 //import router
 import userRoute from "./routes/v1/userRoute";
@@ -13,6 +14,7 @@ import commentMenuRoute from "./routes/v1/commentMenu.Router";
 import commentRestaurantRoute from "./routes/v1/commentRestaurant.Route";
 import categoryRestaurantRoute from "./routes/v1/categoryRestaurant.Route";
 import categoryMenuItemRoute from "./routes/v1/categoryMenuItem.Route";
+import uploadRoutes from "./routes/v1/upload.Route";
 
 const app = express();
 
@@ -21,11 +23,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 app.use(compression());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.get('/', (req, res) => {
     res.send("Welcome");
 });
+app.use("/api", uploadRoutes);
 app.use("/api/v1", userRoute);
 app.use("/api/v1", restaurantRoute);
 app.use("/api/v1", menuItemRoute);
@@ -35,6 +39,7 @@ app.use("/api/v1", commentMenuRoute);
 app.use("/api/v1", commentRestaurantRoute);
 app.use("/api/v1", categoryRestaurantRoute);
 app.use("/api/v1", categoryMenuItemRoute);
+app.use("/api/v1", uploadRoutes);
 app.use(cors());
 // Error handling
 app.use((req: Request, res: Response, next: NextFunction) => {

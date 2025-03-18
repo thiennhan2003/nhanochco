@@ -16,19 +16,16 @@ Content-Type: application/json
 }
 
 ###
-
-PUT http://localhost:8080/api/v1/users/67d16d9c5fa5d8164fc7c6aa
+PUT http://localhost:8080/api/v1/restaurants/67d16d9c5fa5d8164fc7c6aa
 Content-Type: application/json
 
 {
-    "username": "khachhang",
-    "fullname": "khachhang",
-    "email": "khachhang@gmail.com",
-    "password": "khachhang",
-    "role": "restaurant_owner"
+    "name": "Updated Restaurant Name",
+    "address": "Updated Address",
+    "phone": "Updated Phone"
 }
 
 ###
-DELETE http://localhost:8080/api/v1/users/67d2491bcec58d464bf67774
+DELETE http://localhost:8080/api/v1/restaurants/67d2491bcec58d464bf67774
 
 ###

@@ -20,7 +20,7 @@ const getRestaurantById = async (id: string) => {
 }
 
 const getAllRestaurants = async (query:any) => {
-  console.log("Fetching restaurants with query:", query);
+console.log("Fetching restaurants with query:", query);
   const { page = 1, limit = 10 ,sort_type = 'desc', sort_by='createdAt'} = query;
 
   let sortObject = {};

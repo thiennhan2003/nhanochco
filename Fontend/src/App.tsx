@@ -7,7 +7,7 @@ import Posts from "./components/Posts";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import RestaurantsPage from './pages/RestaurantsPage'; // Import RestaurantsPage
-
+// thieu file
 const App: React.FC = () => {
   return (
     <Router>

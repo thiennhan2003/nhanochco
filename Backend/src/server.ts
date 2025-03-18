@@ -7,9 +7,7 @@ import dotenv from 'dotenv'; // Import dotenv
 
 dotenv.config(); // Load .env file
 
-const app = express();
-app.use(cors()); // Enable CORS
-app.use(express.json());
+import app from "./app";
 
 const PORT = env.PORT || 8080; // Default to 8080 if env.PORT is undefined
 
@@ -43,3 +41,5 @@ app.use((err, req, res, next) => {
         message: err.message || 'Internal Server Error',
     });
 });
+
+

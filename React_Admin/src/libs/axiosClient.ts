@@ -1,16 +1,30 @@
 import axios from "axios";
 import { env } from "../constants/getEnvs";
 import { useAuthStore } from "../stores/useAuthStore";
-const API_URL = `${env.API_URL}/v1/auth`;
 
+// API URL cho xác thực (users)
+const API_URL_AUTH = `${env.API_URL}/v1/auth`;
+
+// API URL cho nhà hàng (không cần xác thực)
+const API_URL_RESTAURANTS = `${env.API_URL}/v1`;
+
+// Instance cho users (có xác thực)
 const axiosClient = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL_AUTH,
   // headers: {
   //   "Content-Type": "application/json",
   // },
 });
 
-// REQUEST
+// Instance cho nhà hàng (không xác thực)
+const axiosClientPublic = axios.create({
+  baseURL: API_URL_RESTAURANTS,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// REQUEST Interceptor cho axiosClient (users)
 axiosClient.interceptors.request.use(
   (config) => {
     const { tokens } = useAuthStore.getState();
@@ -18,7 +32,6 @@ axiosClient.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = "Bearer " + token;
     }
-
     return config;
   },
   (error) => {
@@ -26,16 +39,13 @@ axiosClient.interceptors.request.use(
   }
 );
 
-// RESPONSE
-
+// RESPONSE Interceptor cho axiosClient (users)
 axiosClient.interceptors.response.use(
   async (response) => {
     const { access_token, refresh_token } = response.data.data;
-    // LOGIN
     if (access_token) {
       useAuthStore.getState().setTokens({ accessToken: access_token, refreshToken: refresh_token });
     }
-
     return response;
   },
   async (error) => {
@@ -49,7 +59,6 @@ axiosClient.interceptors.response.use(
       console.log("Error 🚀", error);
       originalConfig.sent = true;
       try {
-        // Trường hợp không có token thì chuyển sang trang LOGIN
         const { tokens, clearTokens } = useAuthStore.getState();
         const token = tokens?.accessToken;
         if (!token) {
@@ -84,4 +93,4 @@ axiosClient.interceptors.response.use(
   }
 );
 
-export { axiosClient };
+export { axiosClient, axiosClientPublic };

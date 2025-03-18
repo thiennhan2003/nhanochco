@@ -1,464 +1,511 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { Avatar, Button, Card, Flex, Form, Input, message, Modal, Pagination, Popconfirm, Space, Table, Select, Switch } from "antd"; // Added Select and Switch import
-import type { TableProps, FormProps } from 'antd';
-import {
-    useMutation,
-    useQuery,
-    useQueryClient,
-} from '@tanstack/react-query';
-import { axiosClient } from "../libs/axiosClient";
-import { env } from "../constants/getEnvs";
-import { useNavigate, useSearchParams } from "react-router";
-import { useEffect, useState } from "react";
-import axios from 'axios'; // Ensure axios is imported for type narrowing
+"use client"
 
-interface DataType {
-    _id: string;
-    username: string;
-    email: string;
-    fullname: string;
-    role: string;
-    avatar: string; // Changed from avatarUrl to avatar
-    active: boolean;
-    createdAt: string;
-    updatedAt: string;
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons"
+import {
+  Avatar,
+  Button,
+  Card,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Space,
+  Table,
+  Select,
+  Switch,
+  Rate,
+  InputNumber,
+  Spin,
+} from "antd"
+import type { TableProps, FormProps } from "antd"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { axiosClientPublic } from "../libs/axiosClient"
+import { useSearchParams } from "react-router"
+import { useEffect, useState } from "react"
+import TextArea from "antd/es/input/TextArea"
+import { AxiosError } from "axios"
+
+interface CategoryType {
+  _id: string
+  category_name: string
+  description: string
+  createdAt: string
+  updatedAt: string
 }
 
-export default function RestaurentsPage() {
-    const navigate = useNavigate();
-    const [messageApi, contextHolder] = message.useMessage();
-    const [searchParams] = useSearchParams();
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
+interface OwnerType {
+  _id: string
+  username: string
+  fullname: string
+  email: string
+  avatar: string
+  active: boolean
+  role: string
+  createdAt: string
+  updatedAt: string
+}
 
-    const KEYs = {
-        getrestaurents: () => {
-            return ['restaurents', page, limit];
-        },
-        getUser: (id: string) => {
-            return ['user', id];
+interface CommentType {
+  _id: string
+  user_id: string
+  content: string
+  rating: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface RestaurantType {
+  _id: string
+  owner_id: OwnerType
+  menu_id: string[]
+  name: string
+  address: string
+  phone: number
+  description: string
+  category_id: CategoryType
+  average_rating: number
+  image_url: string
+  comments: CommentType[]
+  is_active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface RestaurantFormData {
+  id?: string
+  name: string
+  address: string
+  phone: number
+  description?: string
+  category_id: string
+  owner_id: string
+  average_rating?: number
+  image_url?: string
+  is_active: boolean
+}
+
+interface ToggleActiveData {
+  id: string
+  is_active: boolean
+}
+
+export default function RestaurantsPage() {
+  const [messageApi, contextHolder] = message.useMessage()
+  const [searchParams] = useSearchParams()
+  const page = Number.parseInt(searchParams.get("page") || "1")
+  const limit = Number.parseInt(searchParams.get("limit") || "10")
+  const [isModalEditOpen, setIsModalEditOpen] = useState(false)
+  const [isModalAddOpen, setIsModalAddOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState<string>("")
+
+  const KEYs = {
+    getRestaurants: () => ["restaurants", page, limit] as const,
+    getRestaurant: (id: string) => ["restaurant", id] as const,
+    getCategories: () => ["categories"] as const,
+    getOwners: () => ["owners"] as const,
+  }
+
+  // Fetch restaurants
+  const fetchRestaurants = async (): Promise<RestaurantType[]> => {
+    try {
+      const response = await axiosClientPublic.get(`/restaurants?page=${page}&limit=${limit}`)
+      console.log("Phản hồi từ API nhà hàng:", response.data)
+      return response.data.restaurants // Trả về mảng restaurants
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu nhà hàng:", error)
+      throw error
+    }
+  }
+
+  const queryRestaurants = useQuery({
+    queryKey: KEYs.getRestaurants(),
+    queryFn: fetchRestaurants,
+  })
+
+  // Fetch categories
+  const fetchCategories = async (): Promise<CategoryType[]> => {
+    const response = await axiosClientPublic.get("/categoryRestaurant")
+    console.log("Phản hồi từ API danh mục:", response.data)
+    return response.data.data // Trả về mảng từ data
+  }
+
+  const queryCategories = useQuery({
+    queryKey: KEYs.getCategories(),
+    queryFn: fetchCategories,
+  })
+
+  // Fetch owners
+  const fetchOwners = async (): Promise<OwnerType[]> => {
+    const response = await axiosClientPublic.get("/users?role=restaurant_owner")
+    console.log("Phản hồi từ API chủ sở hữu:", response.data)
+    return response.data.data.users // Trả về mảng users từ data
+  }
+
+  const queryOwners = useQuery({
+    queryKey: KEYs.getOwners(),
+    queryFn: fetchOwners,
+  })
+
+  const queryClient = useQueryClient()
+
+  // Delete restaurant
+  const deleteRestaurant = async (id: string): Promise<void> => {
+    await axiosClientPublic.delete(`/restaurants/${id}`)
+  }
+
+  const mutationDelete = useMutation({
+    mutationFn: deleteRestaurant,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: KEYs.getRestaurants() })
+      messageApi.open({ type: "success", content: "Xóa nhà hàng thành công!" })
+    },
+    onError: (error: AxiosError) => {
+      messageApi.open({
+        type: "error",
+        content: `Lỗi khi xóa nhà hàng: ${error.response?.data || "Lỗi không xác định"}`,
+      })
+    },
+  })
+
+  // Update restaurant
+  const updateRestaurant = async (formData: RestaurantFormData): Promise<RestaurantType> => {
+    const { id, ...payload } = formData
+    const response = await axiosClientPublic.put(`/restaurants/${id}`, {
+      ...payload,
+      image_url: payload.image_url || "https://via.placeholder.com/150",
+    })
+    return response.data
+  }
+
+  const mutationUpdate = useMutation({
+    mutationFn: updateRestaurant,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: KEYs.getRestaurants() })
+      queryClient.invalidateQueries({ queryKey: KEYs.getRestaurant(selectedId) })
+      messageApi.open({ type: "success", content: "Cập nhật nhà hàng thành công!" })
+      setIsModalEditOpen(false)
+      formEdit.resetFields()
+    },
+    onError: (error: AxiosError) => {
+      messageApi.open({
+        type: "error",
+        content: `Lỗi khi cập nhật nhà hàng: ${error.response?.data || "Lỗi không xác định"}`,
+      })
+    },
+  })
+
+  // Toggle active status
+  const toggleRestaurantActive = async (data: ToggleActiveData): Promise<void> => {
+    const { id, is_active } = data
+    await axiosClientPublic.patch(`/restaurants/${id}/toggle-active`, { is_active })
+  }
+
+  const mutationToggleActive = useMutation({
+    mutationFn: toggleRestaurantActive,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: KEYs.getRestaurants() })
+      messageApi.open({ type: "success", content: "Cập nhật trạng thái nhà hàng thành công!" })
+    },
+    onError: (error: AxiosError) => {
+      messageApi.open({
+        type: "error",
+        content: `Lỗi khi cập nhật trạng thái: ${error.response?.data || "Lỗi không xác định"}`,
+      })
+    },
+  })
+
+  // Add restaurant
+  const addRestaurant = async (formData: Omit<RestaurantFormData, "id">): Promise<RestaurantType> => {
+    const response = await axiosClientPublic.post("/restaurants", {
+      ...formData,
+      image_url: formData.image_url || "https://via.placeholder.com/150",
+    })
+    return response.data
+  }
+
+  const mutationAdd = useMutation({
+    mutationFn: addRestaurant,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: KEYs.getRestaurants() })
+      messageApi.open({ type: "success", content: "Thêm nhà hàng thành công!" })
+      setIsModalAddOpen(false)
+      formAdd.resetFields()
+    },
+    onError: (error: AxiosError) => {
+      messageApi.open({
+        type: "error",
+        content: `Lỗi khi thêm nhà hàng: ${error.response?.data || "Lỗi không xác định"}`,
+      })
+    },
+  })
+
+  // Form instances
+  const [formEdit] = Form.useForm<RestaurantFormData>()
+  const [formAdd] = Form.useForm<Omit<RestaurantFormData, "id">>()
+
+  // Fetch single restaurant for editing
+  const fetchRestaurant = async (): Promise<RestaurantType> => {
+    const response = await axiosClientPublic.get(`/restaurants/${selectedId}`)
+    return response.data
+  }
+
+  const queryRestaurant = useQuery({
+    queryKey: KEYs.getRestaurant(selectedId),
+    queryFn: fetchRestaurant,
+    enabled: selectedId !== "" && isModalEditOpen,
+  })
+
+  useEffect(() => {
+    if (queryRestaurant.isSuccess && queryRestaurant.data) {
+      const restaurantData = queryRestaurant.data
+      formEdit.setFieldsValue({
+        name: restaurantData.name,
+        address: restaurantData.address,
+        phone: restaurantData.phone,
+        description: restaurantData.description,
+        category_id: restaurantData.category_id?._id,
+        owner_id: restaurantData.owner_id?._id,
+        average_rating: restaurantData.average_rating,
+        image_url: restaurantData.image_url,
+        is_active: restaurantData.is_active,
+      })
+    }
+  }, [selectedId, formEdit, queryRestaurant.data, queryRestaurant.isSuccess])
+
+  const onFinishEdit: FormProps<RestaurantFormData>["onFinish"] = async (values) => {
+    await mutationUpdate.mutateAsync({ id: selectedId, ...values })
+  }
+
+  const onFinishAdd: FormProps<Omit<RestaurantFormData, "id">>["onFinish"] = async (values) => {
+    await mutationAdd.mutateAsync(values)
+  }
+
+  // Table columns
+  const columns: TableProps<RestaurantType>["columns"] = [
+    {
+      title: "Hình ảnh",
+      dataIndex: "image_url",
+      key: "image_url",
+      render: (text) => <Avatar src={text || "https://via.placeholder.com/150"} shape="square" size={64} />,
+    },
+    { title: "Tên", dataIndex: "name", key: "name" },
+    { title: "Địa chỉ", dataIndex: "address", key: "address" },
+    { title: "Số điện thoại", dataIndex: "phone", key: "phone" },
+    {
+      title: "Danh mục",
+      dataIndex: ["category_id", "category_name"],
+      key: "category",
+      render: (text, record) => record.category_id?.category_name || "N/A",
+    },
+    {
+      title: "Chủ sở hữu",
+      key: "owner",
+      render: (_, record) => record.owner_id?.username || "N/A",
+    },
+    {
+      title: "Đánh giá",
+      dataIndex: "average_rating",
+      key: "average_rating",
+      render: (rating) => <Rate disabled defaultValue={rating || 0} allowHalf />,
+    },
+    { title: "Mô tả", dataIndex: "description", key: "description", ellipsis: true },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (text) => (text ? new Date(text).toLocaleString() : "N/A"),
+    },
+    {
+      title: "Hoạt động",
+      dataIndex: "is_active",
+      key: "is_active",
+      render: (text, record) => (
+        <Switch
+          checked={record.is_active}
+          onChange={(checked) => mutationToggleActive.mutate({ id: record._id, is_active: checked })}
+        />
+      ),
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      render: (_, record) => (
+        <Space size="middle">
+          <Button
+            onClick={() => {
+              setSelectedId(record._id)
+              setIsModalEditOpen(true)
+            }}
+            icon={<EditOutlined />}
+          />
+          <Popconfirm
+            title="Xóa nhà hàng"
+            description="Bạn có chắc muốn xóa nhà hàng này không?"
+            onConfirm={() => mutationDelete.mutate(record._id)}
+            okButtonProps={{ loading: mutationDelete.isPending }}
+            okText="Có"
+            cancelText="Không"
+          >
+            <Button type="dashed" icon={<DeleteOutlined />} danger />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ]
+
+  // Render dropdown options
+  const renderCategoryOptions = () => {
+    if (queryCategories.isLoading) return <Select.Option value="">Đang tải danh mục...</Select.Option>
+    if (queryCategories.isError) return <Select.Option value="">Lỗi tải danh mục</Select.Option>
+    if (!queryCategories.data?.length) return <Select.Option value="">Không có danh mục</Select.Option>
+    return queryCategories.data.map((category: CategoryType) => (
+      <Select.Option key={category._id} value={category._id}>
+        {category.category_name}
+      </Select.Option>
+    ))
+  }
+
+  const renderOwnerOptions = () => {
+    if (queryOwners.isLoading) return <Select.Option value="">Đang tải chủ sở hữu...</Select.Option>
+    if (queryOwners.isError) return <Select.Option value="">Lỗi tải chủ sở hữu</Select.Option>
+    if (!queryOwners.data?.length) return <Select.Option value="">Không có chủ sở hữu</Select.Option>
+    return queryOwners.data.map((owner: OwnerType) => (
+      <Select.Option key={owner._id} value={owner._id}>
+        {owner.username} ({owner.fullname})
+      </Select.Option>
+    ))
+  }
+
+  return (
+    <>
+      {contextHolder}
+      <title>Quản lý nhà hàng</title>
+
+      <Card
+        variant="borderless"
+        title="Danh sách nhà hàng"
+        extra={
+          <Button onClick={() => setIsModalAddOpen(true)} icon={<PlusOutlined />} type="primary">
+            Thêm mới
+          </Button>
         }
-    };
+      >
+        {queryRestaurants.isLoading ? (
+          <div style={{ textAlign: "center", padding: "50px 0" }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>Đang tải danh sách nhà hàng...</div>
+          </div>
+        ) : queryRestaurants.isError ? (
+          <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
+            Lỗi khi tải nhà hàng: {queryRestaurants.error?.message || "Lỗi không xác định"}. Vui lòng thử lại sau.
+          </div>
+        ) : (
+          <Table
+            rowKey="_id"
+            columns={columns}
+            dataSource={queryRestaurants.data || []}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
+      </Card>
 
-    const fetchrestaurents = async () => {
-        const response = await axiosClient.get(`${env.API_URL}/v1/restaurents?page=${page}&limit=${limit}`);
-        return response.data;
-    };
+      {/* Edit Restaurant Modal */}
+      <Modal
+        title="Chỉnh sửa nhà hàng"
+        centered
+        open={isModalEditOpen}
+        onOk={() => formEdit.submit()}
+        onCancel={() => setIsModalEditOpen(false)}
+        width={700}
+      >
+        <Form
+          name="formEdit"
+          form={formEdit}
+          labelCol={{ span: 6 }}
+          wrapperCol={{ span: 18 }}
+          style={{ maxWidth: 650 }}
+          onFinish={onFinishEdit}
+          autoComplete="off"
+        >
+          <Form.Item label="Tên nhà hàng" name="name" rules={[{ required: true, message: "Vui lòng nhập tên nhà hàng!" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Địa chỉ" name="address" rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}>
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item label="Mô tả" name="description">
+            <TextArea rows={4} />
+          </Form.Item>
+          <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
+            <Select loading={queryCategories.isLoading}>{renderCategoryOptions()}</Select>
+          </Form.Item>
+          <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
+            <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>
+          </Form.Item>
+          <Form.Item label="Đánh giá" name="average_rating">
+            <Rate allowHalf />
+          </Form.Item>
+          <Form.Item label="URL hình ảnh" name="image_url">
+            <Input />
+          </Form.Item>
+          <Form.Item label="Hoạt động" name="is_active" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
 
-    const queryrestaurents = useQuery({
-        queryKey: KEYs.getrestaurents(),
-        queryFn: fetchrestaurents
-    });
-
-    const queryClient = useQueryClient();
-
-    const deleteUser = async (id: string) => {
-        const response = await axiosClient.delete(`${env.API_URL}/v1/restaurents/${id}`);
-        return response.data;
-    };
-
-    const mutationDelete = useMutation({
-        mutationFn: deleteUser,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: KEYs.getrestaurents() });
-            messageApi.open({
-                type: 'success',
-                content: 'User deleted successfully!',
-            });
-        },
-        onError: () => {
-            messageApi.open({
-                type: 'error',
-                content: 'Failed to delete user!',
-            });
-        }
-    });
-
-    const [formEdit] = Form.useForm();
-    const [selectedId, setSelectedId] = useState<string>('');
-    const [isModalEditOpen, setIsModalEditOpen] = useState(false);
-
-    const updateUser = async (formData: DataType & { id: string }) => { // Replaced 'any' with specific type
-        const { id, ...payload } = formData;
-        const response = await axiosClient.put(
-            `${env.API_URL}/v1/restaurents/${id}`,
-{
-                ...payload,
-avatar: payload.avatar || "https://example.com/new-default-avatar.jpg", // Ensure avatar is included
-            },
-        );
-        return response.data;
-    };
-
-    const mutationUpdate = useMutation({
-        mutationFn: updateUser,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: KEYs.getrestaurents() });
-            queryClient.invalidateQueries({ queryKey: KEYs.getUser(selectedId) });
-            messageApi.open({
-                type: 'success',
-                content: 'User updated successfully!',
-            });
-            setIsModalEditOpen(false);
-            formEdit.resetFields();
-        },
-        onError: () => {
-            messageApi.open({
-                type: 'error',
-                content: 'Failed to update user!',
-            });
-        }
-    });
-
-    const onFinishEdit: FormProps<DataType>['onFinish'] = async (values) => {
-        await mutationUpdate.mutateAsync({
-            id: selectedId,
-            _id: selectedId, // Added '_id' to match the DataType structure
-            username: values.username,
-            email: values.email,
-            fullname: values.fullname,
-            role: values.role,
-            avatar: values.avatar,
-            active: values.active,
-            createdAt: values.createdAt, // Corrected typo
-            updatedAt: values.updatedAt, // Corrected typo
-        });
-    };
-
-    const fetchUser = async () => {
-        const response = await axiosClient.get(`${env.API_URL}/v1/restaurents/${selectedId}`);
-        return response.data;
-    };
-
-    const queryUser = useQuery({
-        queryKey: KEYs.getUser(selectedId),
-        queryFn: fetchUser,
-        enabled: selectedId !== '' && isModalEditOpen === true
-    });
-
-    useEffect(() => {
-        if (queryUser.isSuccess && queryUser.data) {
-            const userData = queryUser?.data?.data;
-            // Nếu avatar không tồn tại, sử dụng giá trị mặc định mới
-            formEdit.setFieldsValue({
-                ...userData,
-                avatar: userData.avatar || "https://example.com/new-default-avatar.jpg",
-            });
-        }
-    }, [selectedId, formEdit, queryUser?.data, queryUser.isSuccess]);
-
-    const columns: TableProps<DataType>['columns'] = [
-        {
-            title: 'Avatar',
-            dataIndex: 'avatar',
-            key: 'avatar',
-            render: (text) => (
-                <Avatar 
-                    src={text || 'https://example.com/new-default-avatar.jpg'} // Updated to use avatar field 
-                />
-            ),
-        },
-        {
-            title: 'Username',
-            dataIndex: 'username',
-            key: 'username',
-        },
-        {
-            title: 'Email',
-            dataIndex: 'email',
-            key: 'email',
-        },
-        {
-            title: 'Full Name',
-            dataIndex: 'fullname',
-            key: 'fullname',
-        },
-        {
-            title: 'Role',
-            dataIndex: 'role',
-            key: 'role',
-        },
-       
-        {
-            title: 'Created At',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-            render: (text) => new Date(text).toLocaleString(), // Format ngày
-        },
-        {
-            title: 'Updated At',
-            dataIndex: 'updatedAt',
-            key: 'updatedAt',
-            render: (text) => new Date(text).toLocaleString(), // Format ngày
-        },
-        {
-            title: 'Active',
-            dataIndex: 'active',
-            key: 'active',
-            render: (text, record) => (
-                <Switch
-                    checked={record.active}
-                    onChange={async (checked) => {
-                        await mutationUpdate.mutateAsync({
-                            ...record,
-                            active: checked,
-                            id: record._id
-                        });
-                    }}
-                />
-            ),
-        },
-        {
-            title: 'Action',
-            key: 'action',
-            render: (_, record) => (
-                <Space size="middle">
-                    <Button onClick={() => {
-                        setSelectedId(record._id);
-                        setIsModalEditOpen(true);
-                    }} icon={<EditOutlined />} />
-                    <Popconfirm
-                        title="Delete the user"
-                        description="Are you sure to delete this user?"
-                        onConfirm={async () => {
-                            mutationDelete.mutate(record._id);
-                        }}
-                        okButtonProps={{ loading: mutationDelete.isPending }}
-                        okText="Yes"
-                        cancelText="No"
-                    >
-                        <Button type="dashed" icon={<DeleteOutlined />} danger />
-                    </Popconfirm>
-                </Space>
-            ),
-        },
-
-        
-    ];
-
-    const [formAdd] = Form.useForm();
-    const [isModalAddOpen, setIsModalAddOpen] = useState(false);
-
-    const addUser = async (formData: Omit<DataType, '_id'> & { password: string }) => {
-        try {
-            const payload = {
-                username: formData.username,
-                email: formData.email,
-                fullname: formData.fullname,
-                role: formData.role,
-                avatar: formData.avatar || "https://example.com/new-default-avatar.jpg", // Updated default avatar
-                active: formData.active ?? false, // Default active state
-                password: formData.password, // Include password in the payload
-            };
-            console.log('Payload being sent:', payload); // Log the payload for debugging
-            const response = await axiosClient.post(`${env.API_URL}/v1/restaurents`, payload);
-            console.log('Server response:', response.data); // Log the server response
-            return response.data;
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                console.error('Error adding user:', error.response?.data || error.message); // Log detailed error
-                throw new Error(error.response?.data?.message || 'Failed to add user');
-            } else {
-                console.error('Unexpected error:', error); // Handle non-Axios errors
-                throw new Error('An unexpected error occurred');
-            }
-        }
-    };
-
-    const mutationAdd = useMutation({
-        mutationFn: addUser,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: KEYs.getrestaurents() });
-            messageApi.open({
-                type: 'success',
-                content: 'User added successfully!',
-            });
-            setIsModalAddOpen(false);
-            formAdd.resetFields();
-        },
-        onError: (error) => {
-            if (axios.isAxiosError(error)) {
-                console.error('Add user error:', error.response?.data || error.message); // Log server error
-                messageApi.open({
-                    type: 'error',
-                    content: `Failed to add user: ${error.response?.data?.message || 'Internal Server Error'}`,
-                });
-            } else {
-                console.error('Unexpected error:', error); // Handle non-Axios errors
-                messageApi.open({
-                    type: 'error',
-                    content: 'An unexpected error occurred while adding the user.',
-                });
-            }
-        }
-    });
-
-    const onFinishAdd: FormProps<Omit<DataType, '_id'> & { password: string }>['onFinish'] = async (values) => {
-        await mutationAdd.mutateAsync(values);
-    };
-
-    return (
-        <>
-            {contextHolder}
-            <title>User Manager</title>
-            <Card
-                variant="borderless"
-                title="restaurents List"
-                extra={<Button onClick={() => setIsModalAddOpen(true)} icon={<PlusOutlined />} type="primary">Add New</Button>}
-            >
-                <Flex vertical gap="middle">
-                    <Table<DataType>
-                        rowKey="_id"
-                        loading={queryrestaurents?.isLoading ?? true}
-                        columns={columns}
-                        dataSource={queryrestaurents?.data?.data.restaurents ?? []}
-                        pagination={false}
-                    />
-                    <Pagination
-                        align="end"
-                        defaultCurrent={1}
-                        total={queryrestaurents?.data?.data.pagination.totalRecord ?? 0}
-                        onChange={(page, pageSize) => {
-                            navigate(`/restaurents?page=${page}&limit=${pageSize}`);
-                        }}
-                    />
-                </Flex>
-            </Card>
-            <Modal
-                title="Edit User"
-                centered
-                open={isModalEditOpen}
-                onOk={() => {
-                    formEdit.submit();
-                }}
-                onCancel={() => setIsModalEditOpen(false)}
-            >
-                <Form
-                    name="formEdit"
-                    form={formEdit}
-                    labelCol={{ span: 8 }}
-                    wrapperCol={{ span: 16 }}
-                    style={{ maxWidth: 600 }}
-                    initialValues={{}}
-                    onFinish={onFinishEdit}
-                    autoComplete="off"
-                >
-                    <Form.Item<DataType>
-                        label="Username"
-                        name="username"
-                        rules={[{ required: true, message: 'Please input the username!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<DataType>
-                        label="Email"
-                        name="email"
-                        rules={[{ required: true, message: 'Please input the email!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<DataType>
-                        label="Full Name"
-                        name="fullname"
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<DataType>
-                        label="Role"
-                        name="role"
-                        rules={[{ required: true, message: 'Please select the role!' }]}
-                    >
-                        <Select>
-                            <Select.Option value="customer">Customer</Select.Option>
-                            <Select.Option value="restaurant_owner">Restaurant Owner</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item<DataType>
-                        label="Avatar URL"
-                        name="avatar"
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<DataType>
-                        label="Active"
-                        name="active"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
-                </Form>
-            </Modal>
-            <Modal
-                title="Add User"
-                centered
-                open={isModalAddOpen}
-                onOk={() => {
-                    formAdd.submit();
-                }}
-                onCancel={() => setIsModalAddOpen(false)}
-            >
-                <Form
-                    name="formAdd"
-                    form={formAdd}
-                    labelCol={{ span: 8 }}
-                    wrapperCol={{ span: 16 }}
-                    style={{ maxWidth: 600 }}
-                    initialValues={{}} // No pre-filled values
-                    onFinish={onFinishAdd}
-                    autoComplete="off"
-                >
-                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
-                        label="Username"
-                        name="username"
-                        rules={[{ required: true, message: 'Please input the username!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
-                        label="Email"
-                        name="email"
-                        rules={[{ required: true, message: 'Please input the email!' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
-                        label="Full Name"
-                        name="fullname"
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
-                        label="Role"
-                        name="role"
-                        rules={[{ required: true, message: 'Please select the role!' }]}
-                    >
-                        <Select>
-                            <Select.Option value="customer">Customer</Select.Option>
-                            <Select.Option value="restaurant_owner">Restaurant Owner</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
-                        label="Avatar URL"
-                        name="avatar"
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
-                        label="Password"
-                        name="password"
-                        rules={[{ required: true, message: 'Please input the password!' }]}
-                    >
-                        <Input.Password />
-                    </Form.Item>
-                    <Form.Item<Omit<DataType, '_id'> & { password: string }>
-                        label="Active"
-                        name="active"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
-                </Form>
-            </Modal>
-        </>
-    );
+      {/* Add Restaurant Modal */}
+      <Modal
+        title="Thêm nhà hàng"
+        centered
+        open={isModalAddOpen}
+        onOk={() => formAdd.submit()}
+        onCancel={() => setIsModalAddOpen(false)}
+        width={700}
+      >
+        <Form
+          name="formAdd"
+          form={formAdd}
+          labelCol={{ span: 6 }}
+          wrapperCol={{ span: 18 }}
+          style={{ maxWidth: 650 }}
+          initialValues={{ is_active: true }}
+          onFinish={onFinishAdd}
+          autoComplete="off"
+        >
+          <Form.Item label="Tên nhà hàng" name="name" rules={[{ required: true, message: "Vui lòng nhập tên nhà hàng!" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Địa chỉ" name="address" rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}>
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item label="Mô tả" name="description">
+            <TextArea rows={4} />
+          </Form.Item>
+          <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
+            <Select loading={queryCategories.isLoading}>{renderCategoryOptions()}</Select>
+          </Form.Item>
+          <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
+            <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>
+          </Form.Item>
+          <Form.Item label="Đánh giá" name="average_rating" initialValue={4.5}>
+            <Rate allowHalf />
+          </Form.Item>
+          <Form.Item label="URL hình ảnh" name="image_url" initialValue="https://via.placeholder.com/150">
+            <Input />
+          </Form.Item>
+          <Form.Item label="Hoạt động" name="is_active" valuePropName="checked" initialValue={true}>
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
+  )
 }

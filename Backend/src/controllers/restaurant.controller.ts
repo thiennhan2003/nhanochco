@@ -8,7 +8,7 @@ import { Query } from 'mongoose';
 const getAllRestaurants = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const restaurants = await restaurantsService.getAllRestaurants(req.query); 
-        sendJsonSuccess(res, restaurants, httpStatus.OK.message, httpStatus.OK.statusCode);
+        res.status(200).json(restaurants);
     } catch (error) {
         next(error);
     }
@@ -23,7 +23,7 @@ const getRestaurantById = async (req: Request, res: Response, next: NextFunction
     }
 }
 const createRestaurant = async (req: Request, res: Response, next: NextFunction) => {
-    try{
+    try {
         const payload = req.body;
         const restaurant = await restaurantsService.createrestaurant(payload);
         sendJsonSuccess(res, restaurant, httpStatus.CREATED.message, httpStatus.CREATED.statusCode);

@@ -24,7 +24,7 @@ interface DataType {
     updatedAt: string;
 }
 
-export default function UsersPage() {
+export default function RestaurentsPage() {
     const navigate = useNavigate();
     const [messageApi, contextHolder] = message.useMessage();
     const [searchParams] = useSearchParams();
@@ -32,35 +32,35 @@ export default function UsersPage() {
     const limit = parseInt(searchParams.get("limit") || "10");
 
     const KEYs = {
-        getUsers: () => {
-            return ['users', page, limit];
+        getrestaurents: () => {
+            return ['restaurents', page, limit];
         },
         getUser: (id: string) => {
             return ['user', id];
         }
     };
 
-    const fetchUsers = async () => {
-        const response = await axiosClient.get(`${env.API_URL}/v1/users?page=${page}&limit=${limit}`);
+    const fetchrestaurents = async () => {
+        const response = await axiosClient.get(`${env.API_URL}/v1/restaurents?page=${page}&limit=${limit}`);
         return response.data;
     };
 
-    const queryUsers = useQuery({
-        queryKey: KEYs.getUsers(),
-        queryFn: fetchUsers
+    const queryrestaurents = useQuery({
+        queryKey: KEYs.getrestaurents(),
+        queryFn: fetchrestaurents
     });
 
     const queryClient = useQueryClient();
 
     const deleteUser = async (id: string) => {
-        const response = await axiosClient.delete(`${env.API_URL}/v1/users/${id}`);
+        const response = await axiosClient.delete(`${env.API_URL}/v1/restaurents/${id}`);
         return response.data;
     };
 
     const mutationDelete = useMutation({
         mutationFn: deleteUser,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: KEYs.getUsers() });
+            queryClient.invalidateQueries({ queryKey: KEYs.getrestaurents() });
             messageApi.open({
                 type: 'success',
                 content: 'User deleted successfully!',
@@ -81,7 +81,7 @@ export default function UsersPage() {
     const updateUser = async (formData: DataType & { id: string }) => { // Replaced 'any' with specific type
         const { id, ...payload } = formData;
         const response = await axiosClient.put(
-            `${env.API_URL}/v1/users/${id}`,
+            `${env.API_URL}/v1/restaurents/${id}`,
 {
                 ...payload,
 avatar: payload.avatar || "https://example.com/new-default-avatar.jpg", // Ensure avatar is included
@@ -93,7 +93,7 @@ avatar: payload.avatar || "https://example.com/new-default-avatar.jpg", // Ensur
     const mutationUpdate = useMutation({
         mutationFn: updateUser,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: KEYs.getUsers() });
+            queryClient.invalidateQueries({ queryKey: KEYs.getrestaurents() });
             queryClient.invalidateQueries({ queryKey: KEYs.getUser(selectedId) });
             messageApi.open({
                 type: 'success',
@@ -126,7 +126,7 @@ avatar: payload.avatar || "https://example.com/new-default-avatar.jpg", // Ensur
     };
 
     const fetchUser = async () => {
-        const response = await axiosClient.get(`${env.API_URL}/v1/users/${selectedId}`);
+        const response = await axiosClient.get(`${env.API_URL}/v1/restaurents/${selectedId}`);
         return response.data;
     };
 
@@ -251,7 +251,7 @@ avatar: payload.avatar || "https://example.com/new-default-avatar.jpg", // Ensur
                 password: formData.password, // Include password in the payload
             };
             console.log('Payload being sent:', payload); // Log the payload for debugging
-            const response = await axiosClient.post(`${env.API_URL}/v1/users`, payload);
+            const response = await axiosClient.post(`${env.API_URL}/v1/restaurents`, payload);
             console.log('Server response:', response.data); // Log the server response
             return response.data;
         } catch (error) {
@@ -268,7 +268,7 @@ avatar: payload.avatar || "https://example.com/new-default-avatar.jpg", // Ensur
     const mutationAdd = useMutation({
         mutationFn: addUser,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: KEYs.getUsers() });
+            queryClient.invalidateQueries({ queryKey: KEYs.getrestaurents() });
             messageApi.open({
                 type: 'success',
                 content: 'User added successfully!',
@@ -303,23 +303,23 @@ avatar: payload.avatar || "https://example.com/new-default-avatar.jpg", // Ensur
             <title>User Manager</title>
             <Card
                 variant="borderless"
-                title="Users List"
+                title="restaurents List"
                 extra={<Button onClick={() => setIsModalAddOpen(true)} icon={<PlusOutlined />} type="primary">Add New</Button>}
             >
                 <Flex vertical gap="middle">
                     <Table<DataType>
                         rowKey="_id"
-                        loading={queryUsers?.isLoading ?? true}
+                        loading={queryrestaurents?.isLoading ?? true}
                         columns={columns}
-                        dataSource={queryUsers?.data?.data.users ?? []}
+                        dataSource={queryrestaurents?.data?.data.restaurents ?? []}
                         pagination={false}
                     />
                     <Pagination
                         align="end"
                         defaultCurrent={1}
-                        total={queryUsers?.data?.data.pagination.totalRecord ?? 0}
+                        total={queryrestaurents?.data?.data.pagination.totalRecord ?? 0}
                         onChange={(page, pageSize) => {
-                            navigate(`/users?page=${page}&limit=${pageSize}`);
+                            navigate(`/restaurents?page=${page}&limit=${pageSize}`);
                         }}
                     />
                 </Flex>

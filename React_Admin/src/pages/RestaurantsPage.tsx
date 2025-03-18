@@ -72,6 +72,13 @@ interface RestaurantType {
   updatedAt: string
 }
 
+// Cấu trúc dữ liệu thực tế từ API
+interface RestaurantResponse {
+  statusCode: number
+  message: string
+  data: RestaurantType
+}
+
 interface RestaurantFormData {
   id?: string
   name: string
@@ -107,14 +114,8 @@ export default function RestaurantsPage() {
 
   // Fetch restaurants
   const fetchRestaurants = async (): Promise<RestaurantType[]> => {
-    try {
-      const response = await axiosClientPublic.get(`/restaurants?page=${page}&limit=${limit}`)
-      console.log("Phản hồi từ API nhà hàng:", response.data)
-      return response.data.restaurants // Trả về mảng restaurants
-    } catch (error) {
-      console.error("Lỗi khi lấy dữ liệu nhà hàng:", error)
-      throw error
-    }
+    const response = await axiosClientPublic.get(`/restaurants?page=${page}&limit=${limit}`)
+    return response.data.restaurants
   }
 
   const queryRestaurants = useQuery({
@@ -124,14 +125,8 @@ export default function RestaurantsPage() {
 
   // Fetch owners
   const fetchOwners = async (): Promise<OwnerType[]> => {
-    try {
-      const response = await axiosClientPublic.get("/users?role=restaurant_owner")
-      console.log("Phản hồi từ API chủ sở hữu:", response.data)
-      return response.data.data.users // Trả về mảng users từ data
-    } catch (error) {
-      console.error("Lỗi khi lấy dữ liệu chủ sở hữu:", error)
-      throw error
-    }
+    const response = await axiosClientPublic.get("/users?role=restaurant_owner")
+    return response.data.data.users
   }
 
   const queryOwners = useQuery({
@@ -237,7 +232,7 @@ export default function RestaurantsPage() {
   const [formAdd] = Form.useForm<Omit<RestaurantFormData, "id">>()
 
   // Fetch single restaurant for editing
-  const fetchRestaurant = async (): Promise<RestaurantType> => {
+  const fetchRestaurant = async (): Promise<RestaurantResponse> => {
     const response = await axiosClientPublic.get(`/restaurants/${selectedId}`)
     return response.data
   }
@@ -248,20 +243,26 @@ export default function RestaurantsPage() {
     enabled: selectedId !== "" && isModalEditOpen,
   })
 
+  // Hàm riêng để đẩy dữ liệu lên form với log
+  const populateFormFields = (restaurantResponse: RestaurantResponse) => {
+    const restaurantData = restaurantResponse.data // Lấy dữ liệu từ "data"
+    console.log("Đẩy dữ liệu vào formEdit:", restaurantData)
+    formEdit.setFieldsValue({
+      name: restaurantData.name,
+      address: restaurantData.address,
+      phone: restaurantData.phone,
+      description: restaurantData.description,
+      category_id: restaurantData.category_id?._id,
+      owner_id: restaurantData.owner_id?._id,
+      average_rating: restaurantData.average_rating,
+      image_url: restaurantData.image_url,
+      is_active: restaurantData.is_active,
+    })
+  }
+
   useEffect(() => {
     if (queryRestaurant.isSuccess && queryRestaurant.data) {
-      const restaurantData = queryRestaurant.data
-      formEdit.setFieldsValue({
-        name: restaurantData.name,
-        address: restaurantData.address,
-        phone: restaurantData.phone,
-        description: restaurantData.description,
-        category_id: restaurantData.category_id?._id,
-        owner_id: restaurantData.owner_id?._id,
-        average_rating: restaurantData.average_rating,
-        image_url: restaurantData.image_url,
-        is_active: restaurantData.is_active,
-      })
+      populateFormFields(queryRestaurant.data)
     }
   }, [selectedId, formEdit, queryRestaurant.data, queryRestaurant.isSuccess])
 
@@ -273,13 +274,12 @@ export default function RestaurantsPage() {
     await mutationAdd.mutateAsync(values)
   }
 
-  // Extract categories from restaurants data
+  // Extract categories from restaurants data (giữ nguyên)
   const getCategoryOptions = () => {
     if (queryRestaurants.isLoading) return [<Select.Option key="" value="">Đang tải danh mục...</Select.Option>]
     if (queryRestaurants.isError) return [<Select.Option key="" value="">Lỗi tải danh mục</Select.Option>]
     if (!queryRestaurants.data?.length) return [<Select.Option key="" value="">Không có danh mục</Select.Option>]
 
-    // Lấy danh sách danh mục từ restaurants, loại bỏ trùng lặp
     const categoriesMap = new Map<string, CategoryType>()
     queryRestaurants.data.forEach((restaurant) => {
       if (restaurant.category_id) {
@@ -295,6 +295,7 @@ export default function RestaurantsPage() {
     ))
   }
 
+  // Render owner options (giữ nguyên)
   const renderOwnerOptions = () => {
     if (queryOwners.isLoading) return <Select.Option value="">Đang tải chủ sở hữu...</Select.Option>
     if (queryOwners.isError) return <Select.Option value="">Lỗi tải chủ sở hữu</Select.Option>
@@ -418,46 +419,60 @@ export default function RestaurantsPage() {
         centered
         open={isModalEditOpen}
         onOk={() => formEdit.submit()}
-        onCancel={() => setIsModalEditOpen(false)}
+        onCancel={() => {
+          setIsModalEditOpen(false)
+          formEdit.resetFields()
+        }}
         width={700}
       >
-        <Form
-          name="formEdit"
-          form={formEdit}
-          labelCol={{ span: 6 }}
-          wrapperCol={{ span: 18 }}
-          style={{ maxWidth: 650 }}
-          onFinish={onFinishEdit}
-          autoComplete="off"
-        >
-          <Form.Item label="Tên nhà hàng" name="name" rules={[{ required: true, message: "Vui lòng nhập tên nhà hàng!" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Địa chỉ" name="address" rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}>
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item label="Mô tả" name="description">
-            <TextArea rows={4} />
-          </Form.Item>
-          <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
-            <Select loading={queryRestaurants.isLoading}>{getCategoryOptions()}</Select>
-          </Form.Item>
-          <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
-            <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>
-          </Form.Item>
-          <Form.Item label="Đánh giá" name="average_rating">
-            <Rate allowHalf />
-          </Form.Item>
-          <Form.Item label="URL hình ảnh" name="image_url">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Hoạt động" name="is_active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-        </Form>
+        {queryRestaurant.isLoading ? (
+          <div style={{ textAlign: "center", padding: "20px" }}>
+            <Spin size="large" />
+            <div>Đang tải dữ liệu nhà hàng...</div>
+          </div>
+        ) : queryRestaurant.isError ? (
+          <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
+            Lỗi tải dữ liệu nhà hàng: {queryRestaurant.error?.message || "Lỗi không xác định"}
+          </div>
+        ) : (
+          <Form
+            name="formEdit"
+            form={formEdit}
+            labelCol={{ span: 6 }}
+            wrapperCol={{ span: 18 }}
+            style={{ maxWidth: 650 }}
+            onFinish={onFinishEdit}
+            autoComplete="off"
+          >
+            <Form.Item label="Tên nhà hàng" name="name" rules={[{ required: true, message: "Vui lòng nhập tên nhà hàng!" }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item label="Địa chỉ" name="address" rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}>
+              <InputNumber style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item label="Mô tả" name="description">
+              <TextArea rows={4} />
+            </Form.Item>
+            <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
+              <Select loading={queryRestaurants.isLoading}>{getCategoryOptions()}</Select>
+            </Form.Item>
+            <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
+              <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>
+            </Form.Item>
+            <Form.Item label="Đánh giá" name="average_rating">
+              <Rate allowHalf />
+            </Form.Item>
+            <Form.Item label="URL hình ảnh" name="image_url">
+              <Input />
+            </Form.Item>
+            <Form.Item label="Hoạt động" name="is_active" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+          </Form>
+        )}
       </Modal>
 
       {/* Add Restaurant Modal */}
@@ -466,7 +481,10 @@ export default function RestaurantsPage() {
         centered
         open={isModalAddOpen}
         onOk={() => formAdd.submit()}
-        onCancel={() => setIsModalAddOpen(false)}
+        onCancel={() => {
+          setIsModalAddOpen(false)
+          formAdd.resetFields()
+        }}
         width={700}
       >
         <Form

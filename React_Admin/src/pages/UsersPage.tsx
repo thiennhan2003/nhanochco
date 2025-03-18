@@ -20,6 +20,8 @@ interface DataType {
     role: string;
     avatarUrl: string;
     active: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export default function UsersPage() {
@@ -114,7 +116,9 @@ export default function UsersPage() {
             fullname: values.fullname,
             role: values.role,
             avatarUrl: values.avatarUrl,
-            active: values.active
+            active: values.active,
+            createdAt: values.createdAt, // Corrected typo
+            updatedAt: values.updatedAt, // Corrected typo
         });
     };
 
@@ -171,6 +175,19 @@ export default function UsersPage() {
             dataIndex: 'role',
             key: 'role',
         },
+       
+        {
+            title: 'Created At',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            render: (text) => new Date(text).toLocaleString(), // Format ngày
+        },
+        {
+            title: 'Updated At',
+            dataIndex: 'updatedAt',
+            key: 'updatedAt',
+            render: (text) => new Date(text).toLocaleString(), // Format ngày
+        },
         {
             title: 'Active',
             dataIndex: 'active',
@@ -212,6 +229,8 @@ export default function UsersPage() {
                 </Space>
             ),
         },
+
+        
     ];
 
     const [formAdd] = Form.useForm();

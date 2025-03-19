@@ -8,8 +8,8 @@ POST http://localhost:8080/api/v1/commentMenu
 Content-Type: application/json
 
 {
-    "user_id": "67d24af2cec58d464bf6777a",
-    "menu_id": "67d2ccabc40ca617ff71bc58",
+    "user_id": "67d55a495855da0f023dd8e2",
+    "menu_id": "67da3d4109e0c016e629dce1",
     "content": "his his ",
     "likeCount": 1000,
     "dislikeCount": 0

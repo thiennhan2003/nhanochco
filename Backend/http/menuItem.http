@@ -7,7 +7,7 @@ POST http://localhost:8080/api/v1/menu_Item
 Content-Type: application/json
 
 {
-    "restaurant_id": "67d29501de219374eb2bfe32",
+    "restaurant_id": "67da3c5809e0c016e629dc68",
     "name": "banh canh",
     "description": "banh canhđâđâ ngon1dda122",
     "price": 100000,

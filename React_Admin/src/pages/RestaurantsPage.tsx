@@ -333,7 +333,7 @@ export default function RestaurantsPage() {
       title: "Đánh giá",
       dataIndex: "average_rating",
       key: "average_rating",
-      render: (rating) => <Rate disabled defaultValue={rating || 0} allowHalf />,
+      render: (rating) => <Rate disabled value={rating || 0} allowHalf />, // Thay defaultValue bằng value
     },
     { title: "Mô tả", dataIndex: "description", key: "description", ellipsis: true },
     {

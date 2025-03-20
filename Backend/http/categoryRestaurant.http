@@ -9,8 +9,8 @@ POST http://localhost:8080/api/v1/categoryRestaurant
 Content-Type: application/json
 
 {
-    "category_name": "Món việt",
-    "description": "Các món ăn châu Á"
+    "category_name": "Nhà hàng mỹ",
+    "description": "Các món ăn châu âuâu"
 }
 
 ### Cập nhật danh mục

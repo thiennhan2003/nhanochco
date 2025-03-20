@@ -16,4 +16,22 @@ http://localhost:8080/api/v1/categoryRestaurant
 ---
 http://localhost:8080/api/v1/categoryMenuItem
 ---
+http://localhost:8080/api/v1/users?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/menu_item?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/restaurants?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/posts?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/commentPost?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/commentMenu?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/commentRestaurant?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/categoryRestaurant?page=1&limit=10&sort_type=desc
+---
+http://localhost:8080/api/v1/categoryMenuItem?page=1&limit=10&sort_type=desc
+---
 

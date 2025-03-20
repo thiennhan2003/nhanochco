@@ -33,11 +33,8 @@ function getItem(
 const items: MenuItem[] = [
   getItem('DashBoard', '', <PieChartOutlined />),
   getItem('Restaurant', 'restaurants', <DesktopOutlined />),
-  getItem('Menu_item', 'menu_item', <UserOutlined />, [
-    getItem('Tom', '3'),
-    getItem('Bill', '4'),
-    getItem('Alex', '5'),
-  ]),
+  getItem('Menu_item', 'menu_item', <UserOutlined />
+),
   getItem('Post', 'post', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
   getItem('User', 'users', <FileOutlined />),
 ];

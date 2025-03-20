@@ -11,7 +11,7 @@ import NoPage from './pages/NoPage'; // Đảm bảo NoPage được định ngh
 import EmptyLayout from './layout/EmptyLayout';
 import UsersPage from './pages/UsersPage'; // Đảm bảo UsersPage được định nghĩa
 import RestaurantsPage from './pages/RestaurantsPage'; // Đảm bảo RestaurantsPage được định nghĩa
-
+import Menu_ItemPage from './pages/Menu_itemPage'; // Đảm bảo MenuItemPage được định nghĩa
 const queryClient = new QueryClient()
 function App() {
     return (
@@ -22,6 +22,7 @@ function App() {
                     <Route index element={<Dashboard />} /> {/* Sửa DashBoardPage thành Dashboard */}
                     <Route path='users' element={<UsersPage />} />
                     <Route path='restaurants' element={<RestaurantsPage />} />
+                    <Route path='menu_item' element={<Menu_ItemPage />} />
                 </Route>
                 <Route path="/login" element={<EmptyLayout />}>
                     <Route index element={<LoginPage />} /> {/* Trang Login */}

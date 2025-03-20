@@ -72,7 +72,6 @@ interface RestaurantType {
   updatedAt: string
 }
 
-// Cấu trúc dữ liệu thực tế từ API
 interface RestaurantResponse {
   statusCode: number
   message: string
@@ -110,6 +109,7 @@ export default function RestaurantsPage() {
     getRestaurants: () => ["restaurants", page, limit] as const,
     getRestaurant: (id: string) => ["restaurant", id] as const,
     getOwners: () => ["owners"] as const,
+    getCategories: () => ["categories"] as const,
   }
 
   // Fetch restaurants
@@ -132,6 +132,17 @@ export default function RestaurantsPage() {
   const queryOwners = useQuery({
     queryKey: KEYs.getOwners(),
     queryFn: fetchOwners,
+  })
+
+  // Fetch all categories
+  const fetchCategories = async (): Promise<CategoryType[]> => {
+    const response = await axiosClientPublic.get("/categoryRestaurant") // Sửa thành /categoryRestaurant
+    return response.data.data.categoryRestaurants
+  }
+
+  const queryCategories = useQuery({
+    queryKey: KEYs.getCategories(),
+    queryFn: fetchCategories,
   })
 
   const queryClient = useQueryClient()
@@ -245,7 +256,7 @@ export default function RestaurantsPage() {
 
   // Hàm riêng để đẩy dữ liệu lên form với log
   const populateFormFields = (restaurantResponse: RestaurantResponse) => {
-    const restaurantData = restaurantResponse.data // Lấy dữ liệu từ "data"
+    const restaurantData = restaurantResponse.data
     console.log("Đẩy dữ liệu vào formEdit:", restaurantData)
     formEdit.setFieldsValue({
       name: restaurantData.name,
@@ -274,21 +285,13 @@ export default function RestaurantsPage() {
     await mutationAdd.mutateAsync(values)
   }
 
-  // Extract categories from restaurants data (giữ nguyên)
+  // Lấy toàn bộ danh mục từ queryCategories
   const getCategoryOptions = () => {
-    if (queryRestaurants.isLoading) return [<Select.Option key="" value="">Đang tải danh mục...</Select.Option>]
-    if (queryRestaurants.isError) return [<Select.Option key="" value="">Lỗi tải danh mục</Select.Option>]
-    if (!queryRestaurants.data?.length) return [<Select.Option key="" value="">Không có danh mục</Select.Option>]
+    if (queryCategories.isLoading) return [<Select.Option key="" value="">Đang tải danh mục...</Select.Option>]
+    if (queryCategories.isError) return [<Select.Option key="" value="">Lỗi tải danh mục</Select.Option>]
+    if (!queryCategories.data?.length) return [<Select.Option key="" value="">Không có danh mục</Select.Option>]
 
-    const categoriesMap = new Map<string, CategoryType>()
-    queryRestaurants.data.forEach((restaurant) => {
-      if (restaurant.category_id) {
-        categoriesMap.set(restaurant.category_id._id, restaurant.category_id)
-      }
-    })
-    const categories = Array.from(categoriesMap.values())
-    
-    return categories.map((category) => (
+    return queryCategories.data.map((category) => (
       <Select.Option key={category._id} value={category._id}>
         {category.category_name}
       </Select.Option>
@@ -333,7 +336,7 @@ export default function RestaurantsPage() {
       title: "Đánh giá",
       dataIndex: "average_rating",
       key: "average_rating",
-      render: (rating) => <Rate disabled value={rating || 0} allowHalf />, // Thay defaultValue bằng value
+      render: (rating) => <Rate disabled value={rating || 0} allowHalf />,
     },
     { title: "Mô tả", dataIndex: "description", key: "description", ellipsis: true },
     {
@@ -457,7 +460,7 @@ export default function RestaurantsPage() {
               <TextArea rows={4} />
             </Form.Item>
             <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
-              <Select loading={queryRestaurants.isLoading}>{getCategoryOptions()}</Select>
+              <Select loading={queryCategories.isLoading}>{getCategoryOptions()}</Select>
             </Form.Item>
             <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
               <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>
@@ -510,7 +513,7 @@ export default function RestaurantsPage() {
             <TextArea rows={4} />
           </Form.Item>
           <Form.Item label="Danh mục" name="category_id" rules={[{ required: true, message: "Vui lòng chọn danh mục!" }]}>
-            <Select loading={queryRestaurants.isLoading}>{getCategoryOptions()}</Select>
+            <Select loading={queryCategories.isLoading}>{getCategoryOptions()}</Select>
           </Form.Item>
           <Form.Item label="Chủ sở hữu" name="owner_id" rules={[{ required: true, message: "Vui lòng chọn chủ sở hữu!" }]}>
             <Select loading={queryOwners.isLoading}>{renderOwnerOptions()}</Select>

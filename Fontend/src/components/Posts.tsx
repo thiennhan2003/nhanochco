@@ -110,19 +110,6 @@ const Posts: React.FC = () => {
       }
 
       setHasMore(newPosts.length === 10);
-      
-      // Update views for new posts
-      for (const post of newPosts) {
-        try {
-          await axios.patch(
-            `http://localhost:8080/api/v1/posts/${post._id}`,
-            { user_id: currentUser.id, action: "view" },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-        } catch (viewError) {
-          console.error(`Error updating views for post ${post._id}:`, viewError);
-        }
-      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra khi tải bài viết";
       console.error("Error fetching posts:", errorMessage);
@@ -142,28 +129,55 @@ const Posts: React.FC = () => {
   const handleAddPost = async (newPost: { title: string; content: string; image: string }) => {
     try {
       const token = localStorage.getItem("token");
+      const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+      
+      if (!token || !userProfile._id) {
+        throw new Error("Vui lòng đăng nhập để đăng bài!");
+      }
+
+      // Kiểm tra và xử lý dữ liệu trước khi gửi
+      if (!newPost?.title || !newPost?.content) {
+        throw new Error("Tiêu đề và nội dung không được để trống!");
+      }
+
       const response = await axios.post(
         "http://localhost:8080/api/v1/posts",
         {
-          title: newPost.title,
-          content: newPost.content,
-          image_url: newPost.image || "",
+          title: newPost.title.trim(),
+          content: newPost.content.trim(),
+          image_url: newPost.image?.trim() || "", // Thêm optional chaining cho image
+          user_id: userProfile._id
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          } 
+        }
       );
 
-      const addedPost = response.data;
-      if (addedPost.is_active) {
-        setPosts(prevPosts => [addedPost, ...prevPosts]);
-      }
+      // Tạo post mới với đầy đủ thông tin
+      const addedPost: Post = {
+        ...response.data.data,
+        user_id: {
+          _id: userProfile._id,
+          fullname: userProfile.fullname || "Unknown",
+          username: userProfile.username || "unknown"
+        },
+        likes: [],
+        comments: [],
+        viewCount: 0,
+        is_active: true
+      };
+
+      setPosts(prevPosts => [addedPost, ...prevPosts]);
+      setShowForm(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
       console.error("Error adding post:", errorMessage);
       alert(`Không thể tạo bài viết: ${errorMessage}`);
     }
-    setShowForm(false);
-  };
-
+};
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore) {
       const nextPage = page + 1;
@@ -210,28 +224,28 @@ const Posts: React.FC = () => {
                 transition={{ duration: 0.5 }}
               >
                 <PostCard
-                  post={{
-                    id: post._id,
-                    title: post.title,
-                    content: post.content,
-                    author: post.user_id.fullname,
-                    username: post.user_id.username,
-                    date: new Date(post.createdAt).toLocaleDateString(),
-                    image: post.image_url || "",
-                    likes: post.likes || [],
-                    views: post.viewCount,
-                    comments: post.comments.map((c) => ({
-                      content: c.content,
-                      username: post.user_id.username,
-                    })),
-                  }}
-                />
+  post={{
+    id: post._id,
+    title: post.title,
+    content: post.content,
+    author: post.user_id?.fullname || "Unknown",
+    username: post.user_id?.username || "unknown",
+    date: new Date(post.createdAt).toLocaleDateString(),
+    image: post.image_url || "", // Sửa từ post.image thành post.image_url
+    likes: post.likes || [],
+    views: post.viewCount || 0,
+    comments: (post.comments || []).map((c) => ({
+      content: c.content,
+      username: post.user_id?.username || "unknown",
+    })),
+  }}
+/>
                 <div className="flex justify-end items-center mt-2 space-x-4">
                   <button className="flex items-center text-red-500 hover:text-red-700">
-                    <FaHeart className="mr-1" /> {post.likes.length}
+                    <FaHeart className="mr-1" /> {post.likes?.length || 0}
                   </button>
                   <button className="flex items-center text-blue-500 hover:text-blue-700">
-                    <FaComment className="mr-1" /> {post.comments.length}
+                    <FaComment className="mr-1" /> {post.comments?.length || 0}
                   </button>
                 </div>
               </motion.div>

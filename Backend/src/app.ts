@@ -44,7 +44,6 @@ app.use("/api/v1", categoryMenuItemRoute);
 app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", favoriteRoute);
 app.use('/api/v1/likes', likeRouter);
-app.use(cors());
 // Error handling
 app.use((req: Request, res: Response, next: NextFunction) => {
     next(createError(404));

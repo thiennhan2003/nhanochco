@@ -181,20 +181,20 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         <p className="text-gray-700">{post.content}</p>
       </div>
       {post.image && (
-        <div className="w-full">
-          <img 
-            src={post.image} 
-            alt={post.title} 
-            className="w-full h-64 object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src = "";
-              target.style.display = "none";
-            }}
-          />
-        </div>
-      )}
+  <div className="w-full">
+    <img 
+      src={post.image} 
+      alt={post.title} 
+      className="w-full h-64 object-cover"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        target.onerror = null;
+        target.src = ""; // Có thể thay bằng một ảnh mặc định
+        target.style.display = "none";
+      }}
+    />
+  </div>
+)}
       <div className="flex justify-between items-center px-4 py-2 text-gray-600 text-sm border-t border-gray-200">
         <span>{likeCount} Likes</span>
         <span>{comments.length} Comments</span>

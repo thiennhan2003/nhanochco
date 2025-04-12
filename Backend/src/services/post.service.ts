@@ -47,9 +47,17 @@ const getAllposts = async (query:any) => {
     return post;
 }
 const createpost = async (payload: any) => {
-  const post = await new postModel(payload)
-  await post.save();
-  return post; 
+  try {
+    console.log('Creating post with payload:', payload);
+    const post = await new postModel(payload);
+    console.log('Post model created:', post);
+    await post.save();
+    console.log('Post saved successfully:', post);
+    return post;
+  } catch (error) {
+    console.error('Error in createpost service:', error);
+    throw error;
+  }
 }
 const updatepostById = async(id: string, payload: any) => {
   const post = await getpostById(id);

@@ -2,24 +2,24 @@ import { useState } from "react";
 import axios from "axios";
 
 interface PostFormProps {
-  onAddPost: (post: { title: string; content: string; image: string }) => void;
+  onAddPost: (post: { title: string; content: string; images: string[] }) => void;
   onClose: () => void;
 }
 
 const PostForm: React.FC<PostFormProps> = ({ onAddPost, onClose }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [image, setImage] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handlePost = async () => {
-    if (!title.trim()) {
-      setError("Tiêu đề không được để trống!");
-      return;
-    }
-    if (!content.trim()) {
-      setError("Nội dung không được để trống!");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!title.trim() || !content.trim()) {
+      setError("Vui lòng điền đầy đủ tiêu đề và nội dung");
       return;
     }
 
@@ -40,7 +40,7 @@ const PostForm: React.FC<PostFormProps> = ({ onAddPost, onClose }) => {
         {
           title: title.trim(),
           content: content.trim(),
-          image_url: image.trim() || "", // Sửa image thành image_url
+          images: images,
           user_id: userProfile._id
         },
         {
@@ -55,7 +55,8 @@ const PostForm: React.FC<PostFormProps> = ({ onAddPost, onClose }) => {
         onAddPost(response.data.data);
         setTitle("");
         setContent("");
-        setImage("");
+        setImages([]);
+        setNewImageUrl("");
         onClose();
       }
     } catch (err) {
@@ -65,54 +66,105 @@ const PostForm: React.FC<PostFormProps> = ({ onAddPost, onClose }) => {
     } finally {
       setIsLoading(false);
     }
-};
+  };
+
+  const addImage = () => {
+    if (newImageUrl.trim()) {
+      setImages([...images, newImageUrl.trim()]);
+      setNewImageUrl("");
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
 
   return (
-    <div className="bg-[#efe2db] p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-[#1e0907] mb-4">Create a New Post</h2>
-      {error && (
-        <div className="bg-red-100 text-red-600 p-3 rounded-md mb-4">
-          {error}
-        </div>
-      )}
-      <input
-        type="text"
-        placeholder="Post Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full px-4 py-2 border border-[#c8907e] rounded-md focus:ring-2 focus:ring-[#7c160f]"
-        disabled={isLoading}
-      />
-      <textarea
-        placeholder="Post Content"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="w-full px-4 py-2 border border-[#c8907e] rounded-md mt-2 focus:ring-2 focus:ring-[#7c160f] min-h-[100px]"
-        disabled={isLoading}
-      />
-      <input
-        type="text"
-        placeholder="Image URL (optional)"
-        value={image}
-        onChange={(e) => setImage(e.target.value)}
-        className="w-full px-4 py-2 border border-[#c8907e] rounded-md mt-2 focus:ring-2 focus:ring-[#7c160f]"
-        disabled={isLoading}
-      />
-      <div className="flex justify-between mt-4">
-        <button
-          onClick={handlePost}
-          disabled={isLoading}
-          className="bg-[#7c160f] hover:bg-[#bb6f57] text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:opacity-50"
-        >
-          {isLoading ? "Đang đăng..." : "Đăng bài"}
-        </button>
-        <button
-          onClick={onClose}
-          disabled={isLoading}
-          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:opacity-50"
-        >
-          Hủy
-        </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg w-full max-w-2xl p-6">
+        <h2 className="text-2xl font-semibold mb-4">Tạo bài viết mới</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Tiêu đề"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="mb-4">
+            <textarea
+              placeholder="Nội dung"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={4}
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="mb-4">
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="URL hình ảnh"
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={addImage}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                disabled={isLoading}
+              >
+                Thêm ảnh
+              </button>
+            </div>
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {images.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {error && (
+            <div className="mb-4 text-red-500">{error}</div>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              disabled={isLoading}
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              disabled={isLoading}
+            >
+              {isLoading ? "Đang đăng..." : "Đăng bài"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

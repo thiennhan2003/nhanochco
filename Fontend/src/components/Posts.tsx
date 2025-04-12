@@ -15,7 +15,7 @@ interface Post {
   _id: string;
   title: string;
   content: string;
-  image_url: string;
+  images: string[];
   user_id: {
     _id: string;
     fullname: string;
@@ -27,7 +27,6 @@ interface Post {
   comments: Comment[];
   viewCount: number;
   is_active: boolean;
-  likeCount?: number;
 }
 
 interface ApiResponse {
@@ -126,7 +125,7 @@ const Posts: React.FC = () => {
     }
   }, [currentUser]);
 
-  const handleAddPost = async (newPost: { title: string; content: string; image: string }) => {
+  const handleAddPost = async (newPost: { title: string; content: string; images: string[] }) => {
     try {
       const token = localStorage.getItem("token");
       const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
@@ -145,7 +144,7 @@ const Posts: React.FC = () => {
         {
           title: newPost.title.trim(),
           content: newPost.content.trim(),
-          image_url: newPost.image?.trim() || "", // Thêm optional chaining cho image
+          images: newPost.images,
           user_id: userProfile._id
         },
         { 
@@ -177,7 +176,8 @@ const Posts: React.FC = () => {
       console.error("Error adding post:", errorMessage);
       alert(`Không thể tạo bài viết: ${errorMessage}`);
     }
-};
+  };
+
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore) {
       const nextPage = page + 1;
@@ -224,22 +224,22 @@ const Posts: React.FC = () => {
                 transition={{ duration: 0.5 }}
               >
                 <PostCard
-  post={{
-    id: post._id,
-    title: post.title,
-    content: post.content,
-    author: post.user_id?.fullname || "Unknown",
-    username: post.user_id?.username || "unknown",
-    date: new Date(post.createdAt).toLocaleDateString(),
-    image: post.image_url || "", // Sửa từ post.image thành post.image_url
-    likes: post.likes || [],
-    views: post.viewCount || 0,
-    comments: (post.comments || []).map((c) => ({
-      content: c.content,
-      username: post.user_id?.username || "unknown",
-    })),
-  }}
-/>
+                  post={{
+                    id: post._id,
+                    title: post.title,
+                    content: post.content,
+                    author: post.user_id?.fullname || "Unknown",
+                    username: post.user_id?.username || "unknown",
+                    date: new Date(post.createdAt).toLocaleDateString(),
+                    images: post.images || [],
+                    likes: post.likes || [],
+                    views: post.viewCount || 0,
+                    comments: (post.comments || []).map((c) => ({
+                      content: c.content,
+                      username: post.user_id?.username || "unknown",
+                    })),
+                  }}
+                />
                 <div className="flex justify-end items-center mt-2 space-x-4">
                   <button className="flex items-center text-red-500 hover:text-red-700">
                     <FaHeart className="mr-1" /> {post.likes?.length || 0}

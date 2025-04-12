@@ -7,7 +7,6 @@ import Like from '../models/like.model';
 import Post from '../models/post.model';
 import { Types } from 'mongoose';
 
-
 interface IUser {
     _id: Types.ObjectId;
     username: string;
@@ -27,6 +26,7 @@ interface ILikePopulated {
     createdAt: Date;
     updatedAt: Date;
 }
+
 const toggleLike = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { postId } = req.params;
@@ -112,66 +112,40 @@ const likePost = async (req: Request, res: Response) => {
         const existingLike = await Like.findOne({ post_id, user_id });
         console.log('Existing like:', existingLike);
 
-        let updatedPost;
+        let action;
         if (existingLike) {
-            console.log('Removing existing like');
-            await Like.findByIdAndDelete(existingLike._id);
-            
-            updatedPost = await Post.findByIdAndUpdate(
-                post_id,
-                {
-                    $inc: { likeCount: -1 },
-                    $pull: { likes: user_id }
-                },
-                { new: true }
-            );
-            console.log('Updated post after unlike:', updatedPost);
-
-            return res.status(httpStatus.OK.statusCode).json({
-                statusCode: httpStatus.OK.statusCode,
-                message: 'Unlike thành công',
-                data: {
-                    likeCount: updatedPost.likeCount,
-                    isLiked: false,
-                    likes: updatedPost.likes
-                }
-            });
+            // Nếu đã like thì xóa like
+            await Like.deleteOne({ _id: existingLike._id });
+            action = "unliked";
+        } else {
+            // Nếu chưa like thì tạo like mới
+            await Like.create({ post_id, user_id });
+            action = "liked";
         }
 
-        console.log('Creating new like');
-        const newLike = await Like.create({ post_id, user_id });
-        console.log('New like created:', newLike);
-
-        updatedPost = await Post.findByIdAndUpdate(
-            post_id,
-            {
-                $inc: { likeCount: 1 },
-                $addToSet: { likes: user_id }
-            },
-            { new: true }
-        );
-        console.log('Updated post after like:', updatedPost);
+        // Cập nhật số lượng like trong post
+        const likeCount = await Like.countDocuments({ post_id });
+        await Post.findByIdAndUpdate(post_id, { likeCount });
 
         return res.status(httpStatus.OK.statusCode).json({
             statusCode: httpStatus.OK.statusCode,
-            message: 'Like thành công',
+            message: action === "liked" ? 'Đã thích bài viết' : 'Đã bỏ thích bài viết',
             data: {
-                likeCount: updatedPost.likeCount,
-                isLiked: true,
-                like: newLike,
-                likes: updatedPost.likes
+                action,
+                likeCount,
+                post_id,
+                user_id
             }
         });
     } catch (error) {
-        console.error('Detailed error in likePost:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
+        console.error('Error in likePost:', {
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : 'Unknown error',
             body: req.body
         });
         return res.status(httpStatus.SERVER_ERROR.statusCode).json({
             statusCode: httpStatus.SERVER_ERROR.statusCode,
-            message: `Có lỗi xảy ra khi xử lý like: ${error.message}`,
+            message: `Có lỗi xảy ra khi xử lý like: ${error instanceof Error ? error.message : 'Unknown error'}`,
             data: null
         });
     }
@@ -180,7 +154,7 @@ const likePost = async (req: Request, res: Response) => {
 const getLikesByPost = async (req: Request, res: Response) => {
     try {
         const { post_id } = req.params;
-        
+
         // Kiểm tra post có tồn tại không
         const post = await Post.findById(post_id);
         if (!post) {
@@ -274,4 +248,4 @@ export default {
     getLikeCount,
     likePost,
     getAllLikes
-}; 
+};

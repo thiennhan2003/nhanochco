@@ -15,8 +15,8 @@ interface PostCardProps {
     author: string;
     username: string;
     date: string;
-    image: string;
-    likes: string[]; // Array of user ObjectIds
+    images: string[]; 
+    likes: string[]; 
     views: number;
     comments: Comment[];
   };
@@ -26,7 +26,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<Comment[]>(post.comments);
-  const [likeCount, setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(post.likes.length);
+  const [isLiked, setIsLiked] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; username: string } | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,21 +50,29 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   }, []);
 
   useEffect(() => {
-    const fetchLikeCount = async () => {
+    const checkLikeStatus = async () => {
       try {
+        if (!currentUser?.id) return;
+        
         const response = await axios.get(
-          `http://localhost:8080/api/v1/likes/count/${post.id}`
+          `http://localhost:8080/api/v1/likes/post/${post.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
         );
-        if (response.data) {
-          setLikeCount(response.data.count);
-        }
+        
+        const likedUsers = response.data.data.users;
+        setIsLiked(likedUsers.some((user: any) => user.user_id === currentUser.id));
+        setLikeCount(response.data.data.likeCount || 0);
       } catch (error) {
-        console.error("Error fetching like count:", error);
+        console.error("Error checking like status:", error);
       }
     };
 
-    fetchLikeCount();
-  }, [post.id]);
+    checkLikeStatus();
+  }, [currentUser, post.id]);
 
   const toggleComments = () => {
     setShowComments(!showComments);
@@ -136,30 +145,23 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         },
         {
           headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           }
         }
       );
 
-      // Kiểm tra response và cập nhật số lượng like
-      if (response.data && response.data.statusCode === 200) {
-        setLikeCount(response.data.data.likeCount);
+      if (response.data.data.action === "liked") {
+        setLikeCount(prev => prev + 1);
+        setIsLiked(true);
       } else {
-        setLikeError(response.data?.message || "Không thể cập nhật like");
+        setLikeCount(prev => prev - 1);
+        setIsLiked(false);
       }
     } catch (error) {
       console.error("Error liking post:", error);
-      if (axios.isAxiosError(error)) {
-        // Lỗi từ server
-        setLikeError(error.response?.data?.message || "Có lỗi xảy ra khi thích bài viết");
-      } else if (error instanceof Error) {
-        // Lỗi khác
-        setLikeError(error.message);
-      } else {
-        // Lỗi không xác định
-        setLikeError("Có lỗi xảy ra");
-      }
+      setLikeError("Có lỗi xảy ra khi thích bài viết!");
     } finally {
       setIsLoading(false);
     }
@@ -180,21 +182,25 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         <h3 className="text-lg font-semibold text-gray-800 mb-2">{post.title}</h3>
         <p className="text-gray-700">{post.content}</p>
       </div>
-      {post.image && (
-  <div className="w-full">
-    <img 
-      src={post.image} 
-      alt={post.title} 
-      className="w-full h-64 object-cover"
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        target.onerror = null;
-        target.src = ""; // Có thể thay bằng một ảnh mặc định
-        target.style.display = "none";
-      }}
-    />
-  </div>
-)}
+      {post.images && post.images.length > 0 && (
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
+          {post.images.map((image, index) => (
+            <div key={index} className="relative w-full aspect-video">
+              <img 
+                src={image} 
+                alt={`${post.title} - ${index + 1}`}
+                className="w-full h-full object-cover rounded-lg"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = ""; // Có thể thay bằng một ảnh mặc định
+                  target.style.display = "none";
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex justify-between items-center px-4 py-2 text-gray-600 text-sm border-t border-gray-200">
         <span>{likeCount} Likes</span>
         <span>{comments.length} Comments</span>
@@ -204,10 +210,10 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         <button
           onClick={handleLike}
           disabled={isLoading}
-          className={`flex items-center ${likeCount > 0 ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 disabled:opacity-50`}
+          className={`flex items-center ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 disabled:opacity-50`}
         >
           <FaHeart className="w-5 h-5 mr-1" />
-          {likeCount > 0 ? 'Unlike' : 'Like'}
+          {isLiked ? 'Đã thích' : 'Thích'}
         </button>
         <button
           className="flex items-center text-gray-600 hover:text-blue-600"

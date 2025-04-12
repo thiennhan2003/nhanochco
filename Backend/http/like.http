@@ -1,0 +1,14 @@
+### Test Like API Endpoints
+
+### 1. Toggle Like/Unlike a Post
+PATCH http://localhost:8080/api/v1/likes/67f9f8f3f0d35909db8ad35b
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2QyNGIxM2NlYzU4ZDQ2NGJmNjc3ODIiLCJ1c2VybmFtZSI6ImN1c3RvbWVyMSIsImlhdCI6MTcxMjg5NjQwMCwiZXhwIjoxNzEyOTgyODAwfQ.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+### 2. Get Likes of a Post
+GET http://localhost:8080/api/v1/likes/post/67f9f8f3f0d35909db8ad35b
+
+### 3. Get Posts Liked by a User
+GET http://localhost:8080/api/v1/likes/user/67d24b13cec58d464bf67782
+
+### 4. Get Like Count of a Post
+GET http://localhost:8080/api/v1/likes/count/67f9f8f3f0d35909db8ad35b 

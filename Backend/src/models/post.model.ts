@@ -1,8 +1,8 @@
-import { Schema, model } from "mongoose";
+import mongoose from 'mongoose';
 
-const postSchema = new Schema({
+const postSchema = new mongoose.Schema({
     user_id:{
-        type:Schema.Types.ObjectId,
+        type:mongoose.Schema.Types.ObjectId,
         ref:"User",
     },
     title:{
@@ -25,17 +25,21 @@ const postSchema = new Schema({
         type:Boolean,
         default:true,
     },
-    likeCount:{
-        type:Number,
-        default:0,
-    },
+    likes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      }],
     comments:[{
-        type:Schema.Types.ObjectId,
+        type:mongoose.Schema.Types.ObjectId,
         ref:"CommentPost",
     }],
-    viewCount:{
-        type:Number,
-        default:0,
+    viewCount: {  // Đổi kiểu thành Number nếu chỉ là số đếm
+        type: Number,
+        default: 0,
+    },
+    likeCount: {
+        type: Number,
+        default: 0
     },
     
 },
@@ -45,4 +49,6 @@ const postSchema = new Schema({
     collection:"posts",
 }
 )
-export default model("Post", postSchema);
+const Post = mongoose.model("Post", postSchema);
+
+export default Post;

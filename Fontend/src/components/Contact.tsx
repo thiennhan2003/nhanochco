@@ -17,55 +17,55 @@ const Contact: React.FC = () => {
   };
 
   return (
-    <section id="contact" className="py-16 bg-gray-100">
+    <section id="contact" className="py-16 bg-gradient-to-br from-[#efe2db] via-[#7c160f] to-[#1e0907]">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-bold text-gray-800 text-center mb-6">Liên hệ</h2>
-        <p className="text-gray-600 text-center mb-12">
-          Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi!
+        <h2 className="text-4xl font-bold text-[#1e0907] text-center mb-6">Contact Us</h2>
+        <p className="text-[#1e0907] text-center mb-12">
+          If you have any questions, feel free to reach out to us!
         </p>
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-gray-700 font-medium">Họ và tên</label>
+              <label className="block text-[#1e0907] font-medium">Full Name</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600"
-                placeholder="Nhập họ và tên"
+                className="w-full p-3 border border-[#c8907e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7c160f]"
+                placeholder="Enter your full name"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium">Email</label>
+              <label className="block text-[#1e0907] font-medium">Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600"
-                placeholder="Nhập email"
+                className="w-full p-3 border border-[#c8907e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7c160f]"
+                placeholder="Enter your email"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium">Tin nhắn</label>
+              <label className="block text-[#1e0907] font-medium">Message</label>
               <textarea
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600"
-                placeholder="Nhập tin nhắn của bạn"
+                className="w-full p-3 border border-[#c8907e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7c160f]"
+                placeholder="Enter your message"
                 rows={4}
                 required
               ></textarea>
             </div>
             <button
               type="submit"
-              className="w-full bg-amber-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-amber-700 transition"
+              className="w-full bg-[#7c160f] text-white py-3 rounded-lg text-lg font-semibold hover:bg-[#bb6f57] transition"
             >
-              Gửi tin nhắn
+              Send Message
             </button>
           </form>
         </div>

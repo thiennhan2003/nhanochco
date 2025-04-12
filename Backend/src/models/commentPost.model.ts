@@ -15,14 +15,14 @@ const commentPostSchema = new Schema({
         maxlength: [255, "Content must be less than 255 characters long"],
         minlength: [3, "Content must be at least 3 characters long"],
     },
-    likeCount:{
+    likes: [{
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      }],
+      views: {
         type: Number,
-        default: 0,
-    },
-    dislikeCount:{
-        type: Number,
-        default: 0,
-    },
+        default: 0
+      }
 },
 {
     timestamps: true,

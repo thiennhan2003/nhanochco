@@ -16,6 +16,7 @@ import categoryRestaurantRoute from "./routes/v1/categoryRestaurant.Route";
 import categoryMenuItemRoute from "./routes/v1/categoryMenuItem.Route";
 import uploadRoutes from "./routes/v1/upload.Route";
 import favoriteRoute from "./routes/v1/favorite.route";
+import likeRouter from "./routes/like.routes"
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/v1", categoryRestaurantRoute);
 app.use("/api/v1", categoryMenuItemRoute);
 app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", favoriteRoute);
+app.use('/api/v1/likes', likeRouter);
 app.use(cors());
 // Error handling
 app.use((req: Request, res: Response, next: NextFunction) => {

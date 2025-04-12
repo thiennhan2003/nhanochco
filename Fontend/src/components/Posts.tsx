@@ -1,194 +1,264 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import axios from "axios";
+import PostCard from "./PostCard";
+import PostForm from "./PostForm";
+import { FaHeart, FaComment, FaSpinner } from "react-icons/fa";
 
-function App() {
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      title: "Nhà hàng Nhật Bản yêu thích của tôi",
-      content: "Tôi đã thử một nhà hàng sushi tuyệt vời ở Tokyo và nó thực sự đáng giá!",
-      author: "Nguyễn Văn A",
-      date: "15/03/2025",
-image: "",
-    },
-    {
-      id: 2,
-      title: "Trải nghiệm ăn uống tại Ý",
-      content: "Pizza Napoli ngon nhất tôi từng ăn, hương vị thật sự tuyệt vời!",
-      author: "Trần Thị B",
-      date: "10/03/2025",
-image: "",
-    },
-    {
-      id: 3,
-      title: "Ẩm thực Pháp và rượu vang",
-      content: "Tôi đã có một bữa tối lãng mạn tại một quán bistro nhỏ ở Paris.",
-      author: "Lê Văn C",
-      date: "05/03/2025",
-image: "",
-    },
-  ]);
+interface Comment {
+  _id: string;
+  content: string;
+  createdAt: string;
+}
 
-  const [newPost, setNewPost] = useState({
-    title: "",
-    content: "",
-    author: "",
-    date: "",
-image: "", // Add image property
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setNewPost({ ...newPost, [name]: value });
+interface Post {
+  _id: string;
+  title: string;
+  content: string;
+  image_url: string;
+  user_id: {
+    _id: string;
+    fullname: string;
+    username: string;
   };
+  createdAt: string;
+  updatedAt: string;
+  likes: string[];
+  comments: Comment[];
+  viewCount: number;
+  is_active: boolean;
+  likeCount?: number;
+}
 
-  const handleAddPost = () => {
-    if (newPost.title && newPost.content && newPost.author && newPost.date && newPost.image) {
-      setPosts([...posts, { ...newPost, id: posts.length + 1 }]);
-      setNewPost({ title: "", content: "", author: "", date: "", image: "" });
+interface ApiResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    posts: Post[];
+    pagination: {
+      totalRecord: number;
+      limit: number;
+      page: number;
+    };
+  };
+}
+
+const Posts: React.FC = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; username: string } | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setCurrentUser({
+          id: payload._id || "",
+          username: payload.username || "Guest",
+        });
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        setError("Token không hợp lệ. Vui lòng đăng nhập lại.");
+      }
+    } else {
+      setError("Vui lòng đăng nhập để xem bài viết.");
+    }
+  }, []);
+
+  const fetchPosts = async (pageNum: number, isLoadMore: boolean = false) => {
+    if (!currentUser) return;
+
+    try {
+      if (!isLoadMore) {
+        setLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      setError(null);
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+
+      const response = await axios.get<ApiResponse>("http://localhost:8080/api/v1/posts", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { 
+          page: pageNum, 
+          limit: 10, 
+          sort_type: "desc", 
+          sort_by: "createdAt" 
+        },
+      });
+
+      if (!response.data?.data?.posts) {
+        throw new Error("Không nhận được dữ liệu bài viết");
+      }
+
+      const newPosts = response.data.data.posts.filter(post => post.is_active);
+      
+      if (isLoadMore) {
+        setPosts(prevPosts => [...prevPosts, ...newPosts]);
+      } else {
+        setPosts(newPosts);
+      }
+
+      setHasMore(newPosts.length === 10);
+      
+      // Update views for new posts
+      for (const post of newPosts) {
+        try {
+          await axios.patch(
+            `http://localhost:8080/api/v1/posts/${post._id}`,
+            { user_id: currentUser.id, action: "view" },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } catch (viewError) {
+          console.error(`Error updating views for post ${post._id}:`, viewError);
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra khi tải bài viết";
+      console.error("Error fetching posts:", errorMessage);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
-  return (
-    <div className="bg-gray-100 min-h-screen">
-      <div className="container mx-auto py-10 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Left Sidebar: Featured Restaurants */}
-          <div className="hidden md:block md:col-span-1 bg-white p-4 rounded-lg shadow">
-            <h2 className="text-lg font-bold mb-4">Nhà hàng nổi bật</h2>
-            <ul className="space-y-4">
-              <li className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center gap-4">
-                <img
-                  src="https://via.placeholder.com/50"
-                  alt="Restaurant A"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                Nhà hàng A
-              </li>
-              <li className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center gap-4">
-                <img
-                  src="https://via.placeholder.com/50"
-                  alt="Restaurant B"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                Nhà hàng B
-              </li>
-              <li className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center gap-4">
-                <img
-                  src="https://via.placeholder.com/50"
-                  alt="Restaurant C"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                Nhà hàng C
-              </li>
-            </ul>
-          </div>
+  useEffect(() => {
+    if (currentUser) {
+      fetchPosts(1);
+    }
+  }, [currentUser]);
 
-          {/* Main Feed: Customer Posts */}
-          <div className="col-span-1 md:col-span-2">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h2 className="text-lg font-bold mb-4">Thêm bài viết mới</h2>
-              <div className="space-y-4 mb-6">
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="Tiêu đề"
-                  value={newPost.title}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-                <textarea
-                  name="content"
-                  placeholder="Nội dung"
-                  value={newPost.content}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-                <input
-                  type="text"
-                  name="author"
-                  placeholder="Tác giả"
-                  value={newPost.author}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-                <input
-                  type="date"
-                  name="date"
-                  value={newPost.date}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-<input
-                  type="text"
-                  name="image"
-                  placeholder="Link ảnh"
-                  value={newPost.image}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-                <button
-                  onClick={handleAddPost}
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  Thêm bài viết
-                </button>
-              </div>
-              <h2 className="text-lg font-bold mb-4">Bài viết mới nhất</h2>
-              <ul className="space-y-4">
-                {posts.map((post) => (
-                  <li key={post.id} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-{post.image && (
-                      <img
-                        src={post.image}
-                        alt={post.title}
-                        className="w-full h-40 object-cover rounded mb-2"
-                      />
-                    )}
-                    <h3 className="text-lg font-semibold">{post.title}</h3>
-                    <p className="text-gray-600 mt-1">{post.content}</p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {post.author} - {post.date}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+  const handleAddPost = async (newPost: { title: string; content: string; image: string }) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "http://localhost:8080/api/v1/posts",
+        {
+          title: newPost.title,
+          content: newPost.content,
+          image_url: newPost.image || "",
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-          {/* Right Sidebar: Featured Dishes */}
-          <div className="hidden md:block md:col-span-1 bg-white p-4 rounded-lg shadow">
-            <h2 className="text-lg font-bold mb-4">Món ăn nổi bật</h2>
-            <ul className="space-y-4">
-              <li className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center gap-4">
-                <img
-                  src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDR8fHBob8O0fGVufDB8fHx8MTY4Mzg3Njk3Nw&ixlib=rb-4.0.3&q=80&w=50"
-                  alt="Phở"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                Món Phở - Nhà hàng A
-              </li>
-              <li className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center gap-4">
-                <img
-                  src="https://images.unsplash.com/photo-1571687949920-9476d5862de8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDEyfHxwaXp6YXxlbnwwfHx8fDE2ODM4NzY5OTM&ixlib=rb-4.0.3&q=80&w=50"
-                  alt="Pizza"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                Món Pizza - Nhà hàng B
-              </li>
-              <li className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center gap-4">
-                <img
-                  src="https://images.unsplash.com/photo-1575936123452-b67c3203c357?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDl8fHN1c2hpfGVufDB8fHx8MTY4Mzg3NzAwOA&ixlib=rb-4.0.3&q=80&w=50"
-                  alt="Sushi"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                Món Sushi - Nhà hàng C
-              </li>
-            </ul>
-          </div>
+      const addedPost = response.data;
+      if (addedPost.is_active) {
+        setPosts(prevPosts => [addedPost, ...prevPosts]);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
+      console.error("Error adding post:", errorMessage);
+      alert(`Không thể tạo bài viết: ${errorMessage}`);
+    }
+    setShowForm(false);
+  };
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchPosts(nextPage, true);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <FaSpinner className="animate-spin text-4xl text-[#7c160f]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10">
+        <div className="bg-red-100 text-red-600 p-4 rounded-lg max-w-md mx-auto">
+          {error}
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#efe2db] min-h-screen text-[#1e0907]">
+      <div className="container mx-auto py-10 px-4">
+        <button
+          className="fixed top-20 left-5 bg-[#7c160f] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#bb6f57] transition-colors duration-200"
+          onClick={() => setShowForm(true)}
+        >
+          + Add Post
+        </button>
+        {showForm && <PostForm onAddPost={handleAddPost} onClose={() => setShowForm(false)} />}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
+          {posts.length > 0 ? (
+            posts.map((post) => (
+              <motion.div
+                key={post._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <PostCard
+                  post={{
+                    id: post._id,
+                    title: post.title,
+                    content: post.content,
+                    author: post.user_id.fullname,
+                    username: post.user_id.username,
+                    date: new Date(post.createdAt).toLocaleDateString(),
+                    image: post.image_url || "",
+                    likes: post.likes || [],
+                    views: post.viewCount,
+                    comments: post.comments.map((c) => ({
+                      content: c.content,
+                      username: post.user_id.username,
+                    })),
+                  }}
+                />
+                <div className="flex justify-end items-center mt-2 space-x-4">
+                  <button className="flex items-center text-red-500 hover:text-red-700">
+                    <FaHeart className="mr-1" /> {post.likes.length}
+                  </button>
+                  <button className="flex items-center text-blue-500 hover:text-blue-700">
+                    <FaComment className="mr-1" /> {post.comments.length}
+                  </button>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-10">
+              <p className="text-gray-600">Không có bài viết nào để hiển thị.</p>
+            </div>
+          )}
+        </div>
+        {hasMore && (
+          <div className="text-center mt-8">
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="bg-[#7c160f] text-white px-6 py-2 rounded-full shadow-lg hover:bg-[#bb6f57] transition-colors duration-200 disabled:opacity-50"
+            >
+              {isLoadingMore ? (
+                <FaSpinner className="animate-spin inline-block mr-2" />
+              ) : null}
+              {isLoadingMore ? "Đang tải..." : "Tải thêm"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
 
-export default App;
+export default Posts;

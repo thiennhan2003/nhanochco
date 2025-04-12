@@ -28,23 +28,31 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [comments, setComments] = useState<Comment[]>(post.comments);
   const [likeCount, setLikeCount] = useState(post.likes.length);
   const [isLiked, setIsLiked] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ id: string; username: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ 
+    id: string; 
+    username: string;
+    fullname: string;
+  } | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [likeError, setLikeError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
+    const userProfile = localStorage.getItem("userProfile");
+    
+    if (token && userProfile) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+        const profile = JSON.parse(userProfile);
         setCurrentUser({
           id: payload._id || "",
-          username: payload.username || "Guest",
+          username: profile.username || "",
+          fullname: profile.fullname || ""
         });
       } catch (error) {
-        console.error("Error decoding token:", error);
-        setCurrentUser({ id: "", username: "Guest" });
+        console.error("Error getting user info:", error);
+        setCurrentUser(null);
       }
     }
   }, []);
@@ -114,7 +122,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
       const addedComment: Comment = {
         content: response.data.content || newComment.trim(),
-        username: currentUser.username,
+        username: currentUser.fullname // Sử dụng fullname thay vì username
       };
       setComments([...comments, addedComment]);
       setNewComment("");
@@ -243,7 +251,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                     <FaUser className="text-gray-500 text-sm" />
                   </div>
                   <div className="bg-gray-100 p-2 rounded-lg text-gray-700 text-sm flex-1">
-                    <p className="font-semibold">{comment.username || "Guest"}</p>
+                    <p className="font-semibold">{comment.username}</p>
                     <p>{comment.content}</p>
                   </div>
                 </li>
@@ -260,13 +268,13 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Viết bình luận..."
+              placeholder={currentUser ? "Viết bình luận..." : "Vui lòng đăng nhập để bình luận"}
               className="flex-1 p-2 rounded-full border border-gray-300 focus:outline-none focus:border-blue-500"
-              disabled={isLoading}
+              disabled={isLoading || !currentUser}
             />
             <button
               onClick={handleAddComment}
-              disabled={isLoading}
+              disabled={isLoading || !currentUser}
               className="ml-2 text-blue-600 hover:text-blue-800 font-semibold disabled:opacity-50"
             >
               {isLoading ? "Đang gửi..." : "Gửi"}

@@ -141,13 +141,13 @@ const Signup: React.FC = () => {
               <input
                 className="mr-2 leading-tight"
                 type="radio"
-                id="restaurantOwner"
+                id="restaurant_owner"
                 name="role"
-                value="restaurantOwner"
-                checked={formData.role === "restaurantOwner"}
+                value="restaurant_owner"
+                checked={formData.role === "restaurant_owner"}
                 onChange={handleChange}
               />
-              <label className="text-[#1e0907]" htmlFor="restaurantOwner">
+              <label className="text-[#1e0907]" htmlFor="restaurant_owner">
                 Restaurant Owner
               </label>
             </div>

@@ -8,6 +8,7 @@ import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import RestaurantDetail from './components/RestaurantDetail';
 
 const App: React.FC = () => {
   return (
@@ -26,6 +27,7 @@ const App: React.FC = () => {
           <Route path="/posts" element={<Posts />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/restaurant/:id" element={<RestaurantDetail />} />
         </Routes>
 
         {/* Đặt Footer ở đây để luôn hiển thị trên mọi trang */}

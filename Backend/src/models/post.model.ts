@@ -1,26 +1,22 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 const postSchema = new mongoose.Schema({
     user_id:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
+        required:true,
     },
     title:{
         type:String,
-        maxlength:[100,"Password must be less than 100 characters long"],
-        minlength:[3,"Password must be at least 3 characters long"],
         required:true,
     },
     content:{
         type:String,
-        maxlength:[255,"Password must be less than 255 characters long"],
-        minlength:[3,"Password must be at least 3 characters long"],
         required:true,
     },
-    image_url:{
+    images:[{ 
         type:String,
-        default:"",
-    },
+    }],
     is_active:{
         type:Boolean,
         default:true,
@@ -33,7 +29,7 @@ const postSchema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"CommentPost",
     }],
-    viewCount: {  // Đổi kiểu thành Number nếu chỉ là số đếm
+    viewCount: {  
         type: Number,
         default: 0,
     },
@@ -41,7 +37,6 @@ const postSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    
 },
 {
     timestamps:true,

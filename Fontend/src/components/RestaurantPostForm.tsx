@@ -13,6 +13,7 @@ const RestaurantPostForm: React.FC = () => {
   const [location, setLocation] = useState("");
   const [phone, setPhone] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -39,6 +40,55 @@ const RestaurantPostForm: React.FC = () => {
     fetchCategories();
   }, []);
 
+  // Xử lý upload ảnh
+  const handleImageUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/upload",
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      // Xây dựng URL hoàn chỉnh cho ảnh
+      const uploadedFilename = response.data.filename;
+      const imageUrl = `http://localhost:3000/uploads/${uploadedFilename}`;
+      setImageUrl(imageUrl);
+      setError(null);
+      console.log('Upload thành công:', response.data);
+    } catch (err: any) {
+      console.error("Lỗi khi upload ảnh:", err);
+      if (err.response) {
+        setError(`Lỗi server: ${err.response.data.message || 'Không xác định'}`);
+      } else if (err.request) {
+        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        setError(`Lỗi: ${err.message}`);
+      }
+    }
+  };
+
+  // Xử lý khi chọn file
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      handleImageUpload(file);
+    }
+  };
+
+  // Xóa ảnh
+  const handleRemoveImage = () => {
+    setImageUrl("");
+    setImageFile(null);
+  };
+
   const checkIsRestaurantOwner = () => {
     const userProfile = localStorage.getItem("userProfile");
     if (!userProfile) return false;
@@ -55,6 +105,7 @@ const RestaurantPostForm: React.FC = () => {
     return null;
   };
 
+  // Xử lý khi gửi form
   const handlePost = async () => {
     if (!checkIsRestaurantOwner()) {
       setError("Bạn cần có quyền chủ nhà hàng để thực hiện chức năng này");
@@ -91,7 +142,7 @@ const RestaurantPostForm: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      await axios.post(
+      const response = await axios.post(
         "http://localhost:8080/api/v1/restaurants", 
         newRestaurant,
         {
@@ -102,11 +153,18 @@ const RestaurantPostForm: React.FC = () => {
         }
       );
 
+      console.log('Đăng ký thành công:', response.data);
       // Reload the page after successful addition
       window.location.reload();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Lỗi khi gửi:", err);
-      setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi thêm nhà hàng");
+      if (err.response) {
+        setError(`Lỗi server: ${err.response.data.message || 'Không xác định'}`);
+      } else if (err.request) {
+        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        setError(`Lỗi: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -175,14 +233,40 @@ const RestaurantPostForm: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2">URL Hình ảnh</label>
-            <input
-              type="text"
-              placeholder="Link hình ảnh nhà hàng"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
-            />
+            <label className="block text-gray-700 mb-2">Hình ảnh *</label>
+            <div className="flex items-center gap-4">
+              {imageUrl ? (
+                <div className="relative">
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="w-32 h-32 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="imageUpload"
+                  />
+                  <label
+                    htmlFor="imageUpload"
+                    className="bg-[#7c160f] text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-[#bb6f57]"
+                  >
+                    Chọn ảnh
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>

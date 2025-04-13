@@ -81,6 +81,7 @@ export interface RestaurantFormProps {
   owners: OwnerType[] | undefined
   categoriesLoading: boolean
   ownersLoading: boolean
+  enableUpload?: boolean // Thêm thuộc tính enableUpload
 }
 
 export interface RestaurantTableProps {

@@ -66,7 +66,7 @@ console.log("Fetching restaurants with query:", query);
 const createrestaurant = async (payload: any) => {
   try {
     // Validate required fields
-    if (!payload.owner_id || !payload.name || !payload.address || !payload.phone || !payload.category_id || !payload.avatar_url) {
+    if (!payload.owner_id || !payload.name || !payload.address || !payload.phone || !payload.category_id) {
       throw createError(400, 'Missing required fields');
     }
 
@@ -84,8 +84,8 @@ const createrestaurant = async (payload: any) => {
       address: payload.address,
       phone: cleanedPhone, // Store as string
       category_id: new Types.ObjectId(payload.category_id),
-      avatar_url: payload.avatar_url,
-      images: payload.images || [],
+      avatar_url: payload.avatar_url || '',
+      images: payload.images ? payload.images.filter((url: string) => url) : [], // Filter out empty strings
       is_active: true
     });
 
@@ -101,23 +101,35 @@ const createrestaurant = async (payload: any) => {
     return populatedRestaurant;
   } catch (error) {
     console.error('Error in createrestaurant:', error);
-    throw error;
+    throw createError(500, 'Failed to create restaurant');
   }
 }
 
 const updaterestaurantById = async(id: string, payload: any) => {
-  const restaurant = await getRestaurantById(id);
+  try {
+    const restaurant = await getRestaurantById(id);
 
-  // Update only allowed fields
-  const allowedFields = ['name', 'description', 'address', 'phone', 'category_id', 'avatar_url', 'images', 'is_active'];
-  allowedFields.forEach(field => {
-    if (payload[field] !== undefined) {
-      restaurant[field] = payload[field];
-    }
-  });
+    // Update only allowed fields
+    const allowedFields = ['name', 'description', 'address', 'phone', 'category_id', 'avatar_url', 'images', 'is_active'];
+    allowedFields.forEach(field => {
+      if (payload[field] !== undefined) {
+        if (field === 'images') {
+          // Ensure images is always an array of strings
+          restaurant[field] = Array.isArray(payload[field]) 
+            ? payload[field].filter((url: string) => url) // Filter out empty strings
+            : [];
+        } else {
+          restaurant[field] = payload[field];
+        }
+      }
+    });
 
-  await restaurant.save();
-  return restaurant;
+    await restaurant.save();
+    return restaurant;
+  } catch (error) {
+    console.error('Error in updaterestaurantById:', error);
+    throw createError(500, 'Failed to update restaurant');
+  }
 }
 
 const deleterestaurantById = async (id: string) => {

@@ -49,7 +49,7 @@ const RestaurantPostForm: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/upload",
+        "http://localhost:3001/upload",
         formData,
         {
           headers: {
@@ -60,7 +60,7 @@ const RestaurantPostForm: React.FC = () => {
       
       // Xây dựng URL hoàn chỉnh cho ảnh
       const uploadedFilename = response.data.filename;
-      const imageUrl = `http://localhost:3000/uploads/${uploadedFilename}`;
+      const imageUrl = `http://localhost:3001/uploads/${uploadedFilename}`;
 
       if (isAvatar) {
         setAvatarUrl(imageUrl);

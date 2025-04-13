@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage'; // Đảm bảo LoginPage được đ
 import NoPage from './pages/NoPage'; // Đảm bảo NoPage được định nghĩa
 import EmptyLayout from './layout/EmptyLayout';
 import UsersPage from './pages/UsersPage'; // Đảm bảo UsersPage được định nghĩa
+import RestaurantPage from './pages/RestaurantPage'; // Add this import
 
 const queryClient = new QueryClient()
 function App() {
@@ -20,6 +21,7 @@ function App() {
                 <Route path="/" element={<DefaultLayout />}>
                     <Route index element={<Dashboard />} /> {/* Sửa DashBoardPage thành Dashboard */}
                     <Route path='users' element={<UsersPage />} />
+                    <Route path='restaurants' element={<RestaurantPage />} />
                 </Route>
                 <Route path="/login" element={<EmptyLayout />}>
                     <Route index element={<LoginPage />} /> {/* Trang Login */}

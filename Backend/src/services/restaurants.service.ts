@@ -65,6 +65,8 @@ console.log("Fetching restaurants with query:", query);
 
 const createrestaurant = async (payload: any) => {
   try {
+    console.log("Payload received:", payload);
+
     // Validate required fields
     if (!payload.owner_id || !payload.name || !payload.address || !payload.phone || !payload.category_id || !payload.avatar_url) {
       throw createError(400, 'Missing required fields');
@@ -90,14 +92,14 @@ const createrestaurant = async (payload: any) => {
     });
 
     await restaurant.save();
-    
+
     // Populate the created restaurant
     const populatedRestaurant = await restaurantModel.findById(restaurant._id)
       .populate('menu_id')
       .populate('owner_id')
       .populate('category_id')
       .populate('comments');
-    
+
     return populatedRestaurant;
   } catch (error) {
     console.error('Error in createrestaurant:', error);

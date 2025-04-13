@@ -2,13 +2,13 @@ import createError from 'http-errors';
 import { Request, Response } from 'express';
 import restaurantModel from '../models/restaurant.model';
 
-import { ObjectId } from 'mongoose';
+import { Types } from 'mongoose';
 import categoryRestaurantModel from '../models/categoryRestaurant.model';
 
 const getRestaurantById = async (id: string) => {
   const restaurant = await restaurantModel
       .findById(id)
-      .populate('menu_id') // Thêm dòng này để nạp thông tin menu items
+      .populate('menu_id')
       .populate('owner_id')
       .populate('category_id')
       .populate('comments');
@@ -48,7 +48,7 @@ console.log("Fetching restaurants with query:", query);
       .skip((page - 1) * limit)
       .limit(limit)
       .sort({...sortObject})
-      .populate('menu_id') // Thêm dòng này để nạp thông tin menu items
+      .populate('menu_id')
       .populate('owner_id')
       .populate('category_id')
       .populate('comments');
@@ -62,40 +62,65 @@ console.log("Fetching restaurants with query:", query);
         }
       };
 }
+
 const createrestaurant = async (payload: any) => {
   try {
-      // Tạo nhà hàng mới trực tiếp
-      const restaurant = new restaurantModel(payload);
-      await restaurant.save();
-      
-      // Populate các thông tin cần thiết
-      const populatedRestaurant = await restaurantModel.findById(restaurant._id)
-          .populate('menu_id')
-          .populate('owner_id')
-          .populate('category_id')
-          .populate('comments');
-      
-      return populatedRestaurant;
+    // Validate required fields
+    if (!payload.owner_id || !payload.name || !payload.address || !payload.phone || !payload.category_id || !payload.avatar_url) {
+      throw createError(400, 'Missing required fields');
+    }
+
+    // Validate phone number
+    const cleanedPhone = payload.phone.replace(/\D/g, '');
+    if (!/^[0-9]{10,11}$/.test(cleanedPhone)) {
+      throw createError(400, 'Invalid phone number');
+    }
+
+    // Create new restaurant
+    const restaurant = new restaurantModel({
+      owner_id: new Types.ObjectId(payload.owner_id),
+      name: payload.name,
+      description: payload.description || '',
+      address: payload.address,
+      phone: cleanedPhone, // Store as string
+      category_id: new Types.ObjectId(payload.category_id),
+      avatar_url: payload.avatar_url,
+      images: payload.images || [],
+      is_active: true
+    });
+
+    await restaurant.save();
+    
+    // Populate the created restaurant
+    const populatedRestaurant = await restaurantModel.findById(restaurant._id)
+      .populate('menu_id')
+      .populate('owner_id')
+      .populate('category_id')
+      .populate('comments');
+    
+    return populatedRestaurant;
   } catch (error) {
-      console.error('Error in createrestaurant:', error);
-      throw error;
+    console.error('Error in createrestaurant:', error);
+    throw error;
   }
 }
+
 const updaterestaurantById = async(id: string, payload: any) => {
   const restaurant = await getRestaurantById(id);
 
-//   if (payload.restaurantname !== restaurant.restaurantname) {
-//       const restaurantExist = await restaurantModel.findOne({ restaurantname: payload.restaurantname });
-//       if (restaurantExist) {
-//           throw createError(400, 'restaurant already exists');
-//       }
-//   }
-  Object.assign(restaurant, payload); 
+  // Update only allowed fields
+  const allowedFields = ['name', 'description', 'address', 'phone', 'category_id', 'avatar_url', 'images', 'is_active'];
+  allowedFields.forEach(field => {
+    if (payload[field] !== undefined) {
+      restaurant[field] = payload[field];
+    }
+  });
+
   await restaurant.save();
   return restaurant;
 }
-const deleterestaurantById = async (id: string) => {
 
+const deleterestaurantById = async (id: string) => {
     const restaurant = await getRestaurantById(id);
     await restaurantModel.deleteOne({ _id: restaurant._id });
     return restaurant;

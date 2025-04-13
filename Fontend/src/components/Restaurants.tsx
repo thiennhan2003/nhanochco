@@ -30,7 +30,8 @@ type Restaurant = {
   description: string;
   category_id: Category;
   average_rating: number;
-  image_url: string;
+  avatar_url: string;
+  images: string[];
   comments: any[];
   is_active: boolean;
   createdAt: string;
@@ -114,14 +115,16 @@ const Restaurants: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {restaurants.map((restaurant) => (
+          {restaurants
+            .filter((restaurant) => restaurant.is_active)
+            .map((restaurant) => (
             <Link 
               key={restaurant._id} 
               to={`/restaurant/${restaurant._id}`}
               className="block hover:transform hover:scale-105 transition-transform duration-300"
             >
               <RestaurantCard
-                image={restaurant.image_url || noImage}
+                image={restaurant.avatar_url || restaurant.images[0] || noImage}
                 alt={restaurant.name}
                 country={restaurant.category_id?.category_name || "Chưa phân loại"}
                 name={restaurant.name}

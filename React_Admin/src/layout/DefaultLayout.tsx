@@ -33,9 +33,8 @@ function getItem(
 const items: MenuItem[] = [
   getItem('DashBoard', '', <PieChartOutlined />),
   getItem('Restaurant', 'restaurants', <DesktopOutlined />),
-  getItem('Menu_item', 'menu_item', <UserOutlined />
-),
-  getItem('Post', 'post', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
+  getItem('Menu_item', 'menu_item', <UserOutlined />),
+  getItem('Post', 'posts', <TeamOutlined />),
   getItem('User', 'users', <FileOutlined />),
 ];
 
@@ -65,10 +64,10 @@ const DefaultLayout: React.FC = () => {
           <UserInfo /> {/* Thêm UserInfo vào Header */}
         </Header>
         <Content style={{ margin: '0 16px' }}>
-          <Breadcrumb style={{ margin: '16px 0' }}>
-            <Breadcrumb.Item>User</Breadcrumb.Item>
-            <Breadcrumb.Item>Bill</Breadcrumb.Item>
-          </Breadcrumb>
+          <Breadcrumb items={[
+            { title: 'User' },
+            { title: 'Bill' }
+          ]} style={{ margin: '16px 0' }} />
           <div
             style={{
               padding: 24,
@@ -83,7 +82,7 @@ const DefaultLayout: React.FC = () => {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          Ant Design ©{new Date().getFullYear()} Created by Ant UED
+          Ant Design  Created by Ant UED
         </Footer>
       </Layout>
     </Layout>

@@ -40,10 +40,14 @@ const restaurantSchema = new Schema({
         type:Number,
         default:0,
     },
-    image_url:{
+    avatar_url:{
         type:String,
         default:"",
     },
+    images: [{
+        type: String,
+        default: []
+    }],
     comments:[{
         type:Schema.Types.ObjectId,
         ref:"CommentRestaurant",

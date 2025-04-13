@@ -116,7 +116,7 @@ export default function MenuItemsPage() {
   })
 
   const KEYs = {
-    getMenuItems: () => ["menu_items", page, limit] as const,
+    getMenuItems: () => ["menu_item", page, limit] as const,
     getMenuItem: (id: string) => ["menu_item", id] as const,
     getRestaurants: () => ["restaurants"] as const,
     getCategories: () => ["categories"] as const,
@@ -126,14 +126,36 @@ export default function MenuItemsPage() {
 
   // Fetch menu items
   const fetchMenuItems = async (): Promise<MenuItemType[]> => {
-    const response = await axiosClientPublic.get("/menu_item"); // Nên là endpoint cho tất cả món ăn
-    return response.data.data || []; // Điều chỉnh theo cấu trúc phản hồi API của bạn
+    try {
+      const response = await axiosClientPublic.get("/menu_item");
+      console.log('API Response:', response.data);
+      
+      // Kiểm tra cấu trúc response
+      if (response.data && response.data.data && Array.isArray(response.data.data.menu_Item)) {
+        return response.data.data.menu_Item; // Trả về mảng menu_Item
+      }
+      
+      console.error('Invalid response format:', response.data);
+      return [];
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+      return [];
+    }
   }
 
-  const queryMenuItems = useQuery({
+  const queryMenuItems = useQuery<MenuItemType[], Error>({
     queryKey: KEYs.getMenuItems(),
     queryFn: fetchMenuItems,
-  })
+  });
+  
+  useEffect(() => {
+    if (queryMenuItems.isSuccess && queryMenuItems.data) {
+      console.log('Successfully fetched menu items:', queryMenuItems.data);
+    }
+    if (queryMenuItems.isError && queryMenuItems.error) {
+      console.error('Error in queryMenuItems:', queryMenuItems.error);
+    }
+  }, [queryMenuItems.isSuccess, queryMenuItems.isError, queryMenuItems.data, queryMenuItems.error]);
 
   // Fetch restaurants
   const fetchRestaurants = async (): Promise<RestaurantType[]> => {
@@ -293,9 +315,17 @@ export default function MenuItemsPage() {
   };
 
   const handleImagesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const imagesArray = e.target.value.split("\n").filter(Boolean);
-    setFormData((prev) => ({ ...prev, additional_images: imagesArray }));
-  };
+    const value = e.target.value
+    const imagesArray = value.split("\n").filter((url) => url.trim() !== "")
+    console.log("Additional Images:", imagesArray)
+    setFormData((prev) => ({ ...prev, additional_images: imagesArray }))
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter") {
+      e.stopPropagation()
+    }
+  }
 
   // Toast
   const showToast = (message: string, type: "success" | "error") => {
@@ -305,13 +335,15 @@ export default function MenuItemsPage() {
 
   // Filter menu items by search term
   const filteredMenuItems = Array.isArray(queryMenuItems.data)
-  ? queryMenuItems.data.filter((menuItem: MenuItemType) =>
-      menuItem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      menuItem.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (typeof menuItem.restaurant_id === "object"
-        ? menuItem.restaurant_id?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        : false)
-    )
+  ? queryMenuItems.data.filter((menuItem: MenuItemType) => {
+      const nameMatch = menuItem.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
+      const descriptionMatch = menuItem.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
+      const restaurantMatch = typeof menuItem.restaurant_id === "object"
+        ? menuItem.restaurant_id?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+        : queryRestaurants.data?.find((r) => r._id === menuItem.restaurant_id)?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
+
+      return nameMatch || descriptionMatch || restaurantMatch;
+    })
   : [];
 
   // Format date
@@ -322,13 +354,13 @@ export default function MenuItemsPage() {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    })
-  }
+    });
+  };
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount)
-  }
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -459,7 +491,7 @@ export default function MenuItemsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredMenuItems && filteredMenuItems.length > 0 ? (
+                      {filteredMenuItems.length > 0 ? (
                         filteredMenuItems.map((menuItem) => (
                           <tr key={menuItem._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -543,7 +575,7 @@ export default function MenuItemsPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredMenuItems && filteredMenuItems.length > 0 ? (
+                  {filteredMenuItems.length > 0 ? (
                     filteredMenuItems.map((menuItem) => (
                       <div
                         key={menuItem._id}
@@ -650,7 +682,7 @@ export default function MenuItemsPage() {
                   <div>
                     <p className="text-sm text-gray-700">
                       Hiển thị <span className="font-medium">1</span> đến <span className="font-medium">10</span> của{" "}
-                      <span className="font-medium">{queryMenuItems.data?.length || 0}</span> kết quả
+                      <span className="font-medium">{filteredMenuItems.length}</span> kết quả
                     </p>
                   </div>
                   <div>
@@ -1007,7 +1039,7 @@ export default function MenuItemsPage() {
                     resetForm()
                   }}
                   className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
->
+                >
                   Hủy
                 </button>
               </div>
@@ -1016,73 +1048,73 @@ export default function MenuItemsPage() {
         </div>
       )}
 
-               {/* Image Modal */}
-{isImageModalOpen && (
-<div className="fixed inset-0 z-50 overflow-y-auto">
-<div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-<div className="fixed inset-0 transition-opacity" aria-hidden="true">
-<div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-</div>
+      {/* Image Modal */}
+      {isImageModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
             <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
-&#8203;
-</span>
-<div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle">
-<div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-<div className="flex justify-between">
-<h3 className="text-lg font-medium leading-6 text-gray-900">Ảnh món ăn</h3>
-<button onClick={() => setIsImageModalOpen(false)} className="text-gray-400 hover:text-gray-500">
-<XIcon className="h-6 w-6" />
-</button>
-</div>
-<div className="mt-4">
-<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-{selectedImages.map((image, index) => (
-<div key={index} className="relative">
-<img
-src={image || "/placeholder.svg"}
-alt={`Menu item image ${index + 1}`}
-className="h-40 w-full rounded-lg object-cover"
+              &#8203;
+            </span>
+            <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex justify-between">
+                  <h3 className="text-lg font-medium leading-6 text-gray-900">Ảnh món ăn</h3>
+                  <button onClick={() => setIsImageModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                    <XIcon className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mt-4">
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                    {selectedImages.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image || "/placeholder.svg"}
+                          alt={`Menu item image ${index + 1}`}
+                          className="h-40 w-full rounded-lg object-cover"
                         />
-<div className="absolute right-2 top-2 rounded-full bg-black bg-opacity-50 px-2 py-1 text-xs text-white">
-{index + 1}
-</div>
-</div>
-))}
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
+                        <div className="absolute right-2 top-2 rounded-full bg-black bg-opacity-50 px-2 py-1 text-xs text-white">
+                          {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-{/* Delete Confirmation Modal */}
-{isDeleteModalOpen && (
-<div className="fixed inset-0 z-50 overflow-y-auto">
-<div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-<div className="fixed inset-0 transition-opacity" aria-hidden="true">
-<div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-</div>
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
             <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
-&#8203;
-</span>
-<div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-lg sm:align-middle">
-<div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-<div className="sm:flex sm:items-start">
-<div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-<TrashIcon className="h-6 w-6 text-red-600" aria-hidden="true" />
-</div>
-<div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-<h3 className="text-lg font-medium leading-6 text-gray-900">Xóa món ăn</h3>
-<div className="mt-2">
-<p className="text-sm text-gray-500">
-Bạn có chắc chắn muốn xóa món ăn này? Hành động này không thể hoàn tác.
-</p>
-</div>
+              &#8203;
+            </span>
+            <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-lg sm:align-middle">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <TrashIcon className="h-6 w-6 text-red-600" aria-hidden="true" />
                   </div>
-                                </div>
-</div>
-<div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                  <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                    <h3 className="text-lg font-medium leading-6 text-gray-900">Xóa món ăn</h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Bạn có chắc chắn muốn xóa món ăn này? Hành động này không thể hoàn tác.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                 <button
                   type="button"
                   onClick={() => mutationDelete.mutate(selectedId)}
@@ -1093,16 +1125,16 @@ Bạn có chắc chắn muốn xóa món ăn này? Hành động này không th�
                 </button>
                 <button
                   type="button"
-onClick={() => setIsDeleteModalOpen(false)}
-className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
                 >
-Hủy
-</button>
-</div>
-</div>
-</div>
-</div>
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-</div>
+    </div>
   )
 }

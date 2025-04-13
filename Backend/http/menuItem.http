@@ -7,13 +7,13 @@ POST http://localhost:8080/api/v1/menu_Item
 Content-Type: application/json
 
 {
-    "restaurant_id": "67da76cdb65e785581b74024",
-    "name": "banh dsadjasdaddsadjasdad",
-    "description": "banh canhđâđâ ngon1dda122",
-    "price": 100000,
-    "category_id": "67d4f60ed6dd01e60bf9b8a2",
-    "image_url": "https://via.placeholder.com/150",
-    "is_active": true
+    "restaurant_id": "67fbad6df40d63df57129f21",
+    "name": "Bánh Mỳ",
+    "description": "Bánh mỳ cay, thơm ngon đặc biệt",
+    "price": 100000, 
+    "category_id": "67d50273b4d46e2a092144dd",
+    "main_image_url": "https://via.placeholder.com/150",
+    "additional_images": ["https://via.placeholder.com/100", "https://via.placeholder.com/200"]
 }
 
 ###

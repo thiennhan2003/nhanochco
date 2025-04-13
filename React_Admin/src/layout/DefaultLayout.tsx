@@ -33,7 +33,7 @@ function getItem(
 const items: MenuItem[] = [
   getItem('DashBoard', '', <PieChartOutlined />),
   getItem('Restaurant', 'restaurants', <DesktopOutlined />),
-  getItem('Menu_item', 'menu_item', <UserOutlined />),
+  getItem('Menu Items', 'menu_items', <UserOutlined />), // Updated key to match route
   getItem('Post', 'posts', <TeamOutlined />),
   getItem('User', 'users', <FileOutlined />),
 ];

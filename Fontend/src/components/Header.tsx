@@ -63,6 +63,9 @@ export default function Header() {
           <Link to="/restaurants" className="text-[#1e0907] hover:text-[#bb6f57] font-medium">
             Restaurants
           </Link>
+          <Link to="/menu" className="text-[#1e0907] hover:text-[#bb6f57] font-medium">
+            Món ăn
+          </Link>
           <Link to="/posts" className="text-[#1e0907] hover:text-[#bb6f57] font-medium">
             Posts
           </Link>
@@ -122,6 +125,13 @@ export default function Header() {
               onClick={toggleMenu}
             >
               Restaurants
+            </Link>
+            <Link
+              to="/menu"
+              className="text-[#1e0907] hover:text-[#bb6f57] font-medium"
+              onClick={toggleMenu}
+            >
+              Món ăn
             </Link>
             <Link
               to="/posts"

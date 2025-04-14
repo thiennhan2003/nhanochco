@@ -315,18 +315,12 @@ export default function MenuItemsPage() {
   };
 
   const handleImagesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value
-    const imagesArray = value.split("\n").filter((url) => url.trim() !== "")
-    console.log("Additional Images:", imagesArray)
-    setFormData((prev) => ({ ...prev, additional_images: imagesArray }))
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter") {
-      e.stopPropagation()
-    }
-  }
-
+    const value = e.target.value;
+    console.log("Textarea value:", JSON.stringify(value)); // Hiển thị rõ \n
+    const imagesArray = value.split("\n").filter((url) => url.trim() !== "");
+    console.log("Parsed images array:", imagesArray);
+    setFormData((prev) => ({ ...prev, additional_images: imagesArray }));
+  };
   // Toast
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ show: true, message, type })

@@ -183,7 +183,7 @@ const UserProfile: React.FC = () => {
 
                         <div className="mt-4 flex justify-between items-center">
                           <Link
-                            to={`/restaurant/${restaurant._id}`}
+                            to={`/restaurants/${restaurant._id}`}
                             className="text-blue-500 hover:text-blue-700"
                           >
                             Xem chi tiết

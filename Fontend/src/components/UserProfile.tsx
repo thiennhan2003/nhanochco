@@ -23,6 +23,7 @@ interface Restaurant {
   is_active: boolean;
   avatar_url: string;
   menu_id: { _id: string; name: string; price: number }[];
+  owner_id: { _id: string }; // Thêm owner_id để kiểm tra
 }
 
 const UserProfile: React.FC = () => {
@@ -56,8 +57,12 @@ const UserProfile: React.FC = () => {
 
   const fetchUserRestaurants = async (userId: string) => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/v1/restaurants?owner_id=${userId}`);
-      setRestaurants(response.data.restaurants);
+      const response = await axios.get(`http://localhost:8080/api/v1/restaurants`);
+      // Lọc các nhà hàng có owner_id._id khớp với userId
+      const userRestaurants = response.data.restaurants.filter(
+        (restaurant: Restaurant) => restaurant.owner_id._id === userId
+      );
+      setRestaurants(userRestaurants);
     } catch (error) {
       console.error("Error fetching restaurants:", error);
     }
@@ -111,16 +116,16 @@ const UserProfile: React.FC = () => {
               <div>
                 <p className="text-gray-600">Vai trò</p>
                 <p className="text-[#1e0907] font-medium">
-                  {user.role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  {user.role.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                 </p>
               </div>
               <div>
                 <p className="text-gray-600">Ngày tạo tài khoản</p>
                 <p className="text-[#1e0907] font-medium">
-                  {new Date(user.createdAt).toLocaleDateString('vi-VN', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+                  {new Date(user.createdAt).toLocaleDateString("vi-VN", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
                   })}
                 </p>
               </div>
@@ -147,10 +152,13 @@ const UserProfile: React.FC = () => {
               {restaurants.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {restaurants.map((restaurant) => (
-                    <div key={restaurant._id} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                    <div
+                      key={restaurant._id}
+                      className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+                    >
                       <div className="relative aspect-square mb-4">
                         <img
-                          src={restaurant.avatar_url || 'https://via.placeholder.com/300'}
+                          src={restaurant.avatar_url || "https://via.placeholder.com/300"}
                           alt={restaurant.name}
                           className="w-full h-full object-cover rounded-lg"
                         />
@@ -161,8 +169,8 @@ const UserProfile: React.FC = () => {
                         <p className="text-gray-600">Điện thoại: {restaurant.phone}</p>
                         <p className="text-gray-600">Danh mục: {restaurant.category_id.category_name}</p>
                         <div className="flex items-center text-gray-600">
-                          <span className={restaurant.is_active ? 'text-green-500' : 'text-red-500'}>
-                            {restaurant.is_active ? 'Đang hoạt động' : 'Đã đóng cửa'}
+                          <span className={restaurant.is_active ? "text-green-500" : "text-red-500"}>
+                            {restaurant.is_active ? "Đang hoạt động" : "Đã đóng cửa"}
                           </span>
                         </div>
 
@@ -174,7 +182,9 @@ const UserProfile: React.FC = () => {
                               {restaurant.menu_id.map((menuItem: any) => (
                                 <div key={menuItem._id} className="flex justify-between items-center">
                                   <span className="text-gray-600">{menuItem.name}</span>
-                                  <span className="text-gray-600 font-medium">{menuItem.price.toLocaleString('vi-VN')} ₫</span>
+                                  <span className="text-gray-600 font-medium">
+                                    {menuItem.price.toLocaleString("vi-VN")} ₫
+                                  </span>
                                 </div>
                               ))}
                             </div>

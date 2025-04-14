@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { MenuItem, Category } from '../types/index';
 
+interface Restaurant {
+  _id: string;
+  name: string;
+}
+
 interface MenuItemPostFormProps {
   onClose: () => void;
 }
@@ -15,14 +20,17 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
     main_image_file: null as File | null,
     additional_images: [] as string[],
     additional_image_files: [] as File[],
-    category_id: ""
+    category_id: "",
+    restaurant_id: "", // Thêm restaurant_id vào formData
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]); // State cho danh sách nhà hàng
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Hàm lấy danh sách danh mục
     const fetchCategories = async () => {
       try {
         const response = await axios.get("http://localhost:8080/api/v1/categoryMenuItem");
@@ -31,7 +39,7 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
           if (response.data.data.categoryMenuItems.length > 0) {
             setFormData(prev => ({
               ...prev,
-              category_id: response.data.data.categoryMenuItems[0]._id
+              category_id: response.data.data.categoryMenuItems[0]._id,
             }));
           }
         }
@@ -41,7 +49,27 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
       }
     };
 
+    // Hàm lấy danh sách nhà hàng
+    const fetchRestaurants = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/v1/restaurants");
+        if (response.data && response.data.restaurants) {
+          setRestaurants(response.data.restaurants);
+          if (response.data.restaurants.length > 0) {
+            setFormData(prev => ({
+              ...prev,
+              restaurant_id: response.data.restaurants[0]._id, // Mặc định chọn nhà hàng đầu tiên
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách nhà hàng:", error);
+        setError("Không thể tải danh sách nhà hàng. Vui lòng thử lại sau.");
+      }
+    };
+
     fetchCategories();
+    fetchRestaurants();
   }, []);
 
   // Xử lý upload ảnh
@@ -55,11 +83,11 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+            'Content-Type': 'multipart/form-data',
+          },
         }
       );
-      
+
       const uploadedFilename = response.data.filename;
       const imageUrl = `http://localhost:3001/uploads/${uploadedFilename}`;
 
@@ -67,13 +95,13 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
         setFormData(prev => ({
           ...prev,
           main_image_url: imageUrl,
-          main_image_file: file
+          main_image_file: file,
         }));
       } else {
         setFormData(prev => ({
           ...prev,
           additional_images: [...prev.additional_images, imageUrl],
-          additional_image_files: [...prev.additional_image_files, file]
+          additional_image_files: [...prev.additional_image_files, file],
         }));
       }
       setError(null);
@@ -99,7 +127,6 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
         handleImageUpload(files[0], true);
       }
     } else {
-      // Lọc bỏ các file không phải ảnh
       const validFiles = files.filter(file => file.type.startsWith('image/'));
       validFiles.forEach(file => handleImageUpload(file, false));
     }
@@ -110,7 +137,7 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
     setFormData(prev => ({
       ...prev,
       additional_images: prev.additional_images.filter((_, i) => i !== index),
-      additional_image_files: prev.additional_image_files.filter((_, i) => i !== index)
+      additional_image_files: prev.additional_image_files.filter((_, i) => i !== index),
     }));
   };
 
@@ -119,7 +146,7 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
     setFormData(prev => ({
       ...prev,
       main_image_url: "",
-      main_image_file: null
+      main_image_file: null,
     }));
   };
 
@@ -127,7 +154,7 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -136,14 +163,6 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
     setLoading(true);
 
     try {
-      const userProfile = localStorage.getItem("userProfile");
-      if (!userProfile) {
-        throw new Error("Không tìm thấy thông tin người dùng");
-      }
-
-      const user = JSON.parse(userProfile);
-      const restaurantId = user.restaurant_id;
-
       // Kiểm tra xem có ảnh chính không
       if (!formData.main_image_url) {
         setError("Vui lòng chọn ảnh chính cho món ăn");
@@ -156,13 +175,18 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
         return;
       }
 
+      // Kiểm tra xem có nhà hàng không
+      if (!formData.restaurant_id) {
+        setError("Vui lòng chọn nhà hàng cho món ăn");
+        return;
+      }
+
       const response = await axios.post("http://localhost:8080/api/v1/menu_item", {
         ...formData,
-        restaurant_id: restaurantId
       });
 
       console.log("Đã thêm món ăn thành công:", response.data);
-      onClose(); // Close the form
+      onClose(); // Đóng form
     } catch (error) {
       console.error("Lỗi khi thêm món ăn:", error);
       setError("Có lỗi khi thêm món ăn. Vui lòng thử lại.");
@@ -180,6 +204,26 @@ const MenuItemPostForm: React.FC<MenuItemPostFormProps> = ({ onClose }) => {
           {error}
         </div>
       )}
+
+      <div className="mb-4">
+        <label className="block text-[#1e0907] text-sm font-medium mb-2">
+          Nhà hàng *
+        </label>
+        <select
+          name="restaurant_id"
+          value={formData.restaurant_id}
+          onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#7c160f]"
+          required
+        >
+          <option value="">Chọn nhà hàng</option>
+          {restaurants.map((restaurant) => (
+            <option key={restaurant._id} value={restaurant._id}>
+              {restaurant.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="mb-4">
         <label className="block text-[#1e0907] text-sm font-medium mb-2">

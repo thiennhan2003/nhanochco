@@ -57,7 +57,8 @@ const RestaurantEdit: React.FC = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [restaurantCategories, setRestaurantCategories] = useState<Category[]>([]);
+  const [menuCategories, setMenuCategories] = useState<Category[]>([]);
   const [showAddMenuForm, setShowAddMenuForm] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const [menuFormData, setMenuFormData] = useState({
@@ -80,9 +81,13 @@ const RestaurantEdit: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
+  const [mainImageUrl, setMainImageUrl] = useState<string>('');
+  const [additionalImageUrls, setAdditionalImageUrls] = useState<string[]>([]);
 
   // Xử lý upload ảnh
-  const handleImageUpload = async (file: File, isAvatar: boolean) => {
+  const handleImageUpload = async (file: File, isAvatar: boolean, isMenuImage: boolean = false) => {
     const formData = new FormData();
     formData.append('image', file);
 
@@ -96,27 +101,29 @@ const RestaurantEdit: React.FC = () => {
       const uploadedFilename = response.data.filename;
       const imageUrl = `http://localhost:3001/uploads/${uploadedFilename}`;
 
-      if (isAvatar) {
-        setAvatarUrl(imageUrl);
-        setError(null);
+      if (isMenuImage) {
+        if (isAvatar) { // Used to differentiate main_image
+          setMainImageUrl(imageUrl);
+        } else {
+          setAdditionalImageUrls(prev => [...prev, imageUrl]);
+        }
       } else {
-        setImageUrls(prev => [...prev, imageUrl]);
-        setError(null);
+        if (isAvatar) {
+          setAvatarUrl(imageUrl);
+        } else {
+          setImageUrls(prev => [...prev, imageUrl]);
+        }
       }
-      console.log('Upload thành công:', response.data);
+      setError(null);
+      return imageUrl;
     } catch (err: any) {
       console.error('Lỗi khi upload ảnh:', err);
-      if (err.response) {
-        setError(`Lỗi server: ${err.response.data.message || 'Không xác định'}`);
-      } else if (err.request) {
-        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
-      } else {
-        setError(`Lỗi: ${err.message}`);
-      }
+      setError(err.response?.data?.message || 'Không thể upload ảnh');
+      return null;
     }
   };
 
-  // Xử lý khi chọn file
+  // Xử lý khi chọn file cho nhà hàng
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, isAvatar: boolean) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
@@ -136,17 +143,63 @@ const RestaurantEdit: React.FC = () => {
     }
   };
 
-  // Xóa ảnh
+  // Xử lý khi chọn file cho món ăn
+  const handleMenuFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'main' | 'additional'
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    if (type === 'main') {
+      const file = files[0];
+      setMenuFormData(prev => ({ ...prev, main_image: file }));
+      handleImageUpload(file, true, true);
+
+      const reader = new FileReader();
+      reader.onload = e => setMainImagePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      const validFiles = files.filter(file => file.type.startsWith('image/'));
+      setMenuFormData(prev => ({ ...prev, additional_images: validFiles }));
+      validFiles.forEach(file => {
+        handleImageUpload(file, false, true);
+        const reader = new FileReader();
+        reader.onload = e => {
+          setAdditionalImagePreviews(prev => [...prev, e.target?.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  // Xóa ảnh nhà hàng
   const handleRemoveImage = (index: number) => {
     setImageUrls(prev => prev.filter((_, i) => i !== index));
     setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Xóa avatar
+  // Xóa avatar nhà hàng
   const handleRemoveAvatar = () => {
     setAvatarUrl('');
     setAvatarFile(null);
     setAvatarPreview(null);
+  };
+
+  // Xóa ảnh món ăn
+  const handleRemoveMenuImage = (type: 'main' | 'additional', index?: number) => {
+    if (type === 'main') {
+      setMainImagePreview(null);
+      setMainImageUrl('');
+      setMenuFormData(prev => ({ ...prev, main_image: null }));
+    } else if (index !== undefined) {
+      setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
+      setAdditionalImageUrls(prev => prev.filter((_, i) => i !== index));
+      setMenuFormData(prev => ({
+        ...prev,
+        additional_images: prev.additional_images.filter((_, i) => i !== index),
+      }));
+    }
   };
 
   // Load restaurant và categories
@@ -182,36 +235,52 @@ const RestaurantEdit: React.FC = () => {
       }
     };
 
-    const fetchCategories = async () => {
+    const fetchRestaurantCategories = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          console.error('No token found');
-          return;
-        }
+        if (!token) throw new Error('No token');
         const response = await axios.get<{ data: { categoryRestaurants: Category[] } }>(
           'http://localhost:8080/api/v1/categoryRestaurant',
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        console.log('Categories response:', response.data);
-        setCategories(response.data.data.categoryRestaurants);
+        console.log('Restaurant categories response:', response.data);
+        setRestaurantCategories(response.data.data.categoryRestaurants);
       } catch (err: any) {
-        console.error('Error fetching categories:', err.response?.data || err.message);
-        setError('Không thể tải danh mục');
+        console.error('Error fetching restaurant categories:', err.response?.data || err.message);
+        setError('Không thể tải danh mục nhà hàng');
+      }
+    };
+
+    const fetchMenuCategories = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token');
+        const response = await axios.get<{ data: { categoryMenuItems: Category[] } }>(
+          'http://localhost:8080/api/v1/categoryMenuItem',
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log('Menu categories response:', response.data);
+        setMenuCategories(response.data.data.categoryMenuItems);
+      } catch (err: any) {
+        console.error('Error fetching menu categories:', err.response?.data || err.message);
+        setError('Không thể tải danh mục món ăn');
       }
     };
 
     fetchRestaurant();
-    fetchCategories();
+    fetchRestaurantCategories();
+    fetchMenuCategories();
   }, [id]);
 
   const handleRestaurantInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    console.log(`Input change: ${name} = ${value}`);
+    console.log(`Restaurant input change: ${name} = ${value}`);
     setRestaurantFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -219,24 +288,8 @@ const RestaurantEdit: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    console.log(`Menu input change: ${name} = ${value}`);
     setMenuFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleMenuFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: 'main' | 'additional'
-  ) => {
-    if (type === 'main') {
-      const file = e.target.files?.[0];
-      if (file) {
-        console.log('Selected main image:', file.name);
-        setMenuFormData(prev => ({ ...prev, main_image: file }));
-      }
-    } else {
-      const files = Array.from(e.target.files || []);
-      console.log('Selected additional images:', files.map(f => f.name));
-      setMenuFormData(prev => ({ ...prev, additional_images: files }));
-    }
   };
 
   const fetchRestaurant = async () => {
@@ -292,7 +345,7 @@ const RestaurantEdit: React.FC = () => {
         is_active: restaurant?.is_active || true,
       };
 
-      console.log('JSON Data:', data);
+      console.log('Restaurant JSON Data:', data);
 
       const response = await axios.put(`http://localhost:8080/api/v1/restaurants/${id}`, data, {
         headers: {
@@ -301,7 +354,7 @@ const RestaurantEdit: React.FC = () => {
         },
       });
 
-      console.log('PUT Response:', response.data);
+      console.log('Restaurant PUT Response:', response.data);
 
       await fetchRestaurant();
 
@@ -319,48 +372,49 @@ const RestaurantEdit: React.FC = () => {
 
   const handleAddMenu = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Không có token');
-
-      const formData = new FormData();
-      formData.append('name', menuFormData.name);
-      formData.append('description', menuFormData.description);
-      formData.append('price', menuFormData.price);
-      formData.append('category_id', menuFormData.category_id);
-      formData.append('restaurant_id', id || '');
-
-      if (menuFormData.main_image) {
-        formData.append('main_image', menuFormData.main_image);
+  
+      if (!menuFormData.name || !menuFormData.description || !menuFormData.price) {
+        setError('Vui lòng điền đầy đủ tên, mô tả và giá món ăn');
+        return;
       }
-
-      if (menuFormData.additional_images.length > 0) {
-        menuFormData.additional_images.forEach((image, index) => {
-          formData.append(`additional_images[${index}]`, image);
-        });
+      if (!id) {
+        setError('Không tìm thấy ID nhà hàng');
+        return;
       }
-
-      console.log('Submitting menu item data:', {
+  
+      const price = Number(menuFormData.price);
+      if (isNaN(price)) {
+        setError('Giá món ăn phải là một số hợp lệ');
+        return;
+      }
+  
+      const data = {
         name: menuFormData.name,
         description: menuFormData.description,
-        price: menuFormData.price,
+        price,
         category_id: menuFormData.category_id,
-        hasMainImage: !!menuFormData.main_image,
-        additionalImagesCount: menuFormData.additional_images.length,
-      });
-
-      const response = await axios.post('http://localhost:8080/api/v1/menu_item', formData, {
+        restaurant_id: id,
+        main_image_url: mainImageUrl || '',
+        additional_images: additionalImageUrls,
+      };
+  
+      console.log('Submitting menu item data:', data);
+  
+      const response = await axios.post('http://localhost:8080/api/v1/menu_item', data, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
         },
       });
-
+  
       console.log('Menu item add response:', response.data);
-
+  
       await fetchRestaurant();
-
+  
       setShowAddMenuForm(false);
       setMenuFormData({
         name: '',
@@ -370,45 +424,63 @@ const RestaurantEdit: React.FC = () => {
         main_image: null,
         additional_images: [],
       });
+      setMainImagePreview(null);
+      setAdditionalImagePreviews([]);
+      setMainImageUrl('');
+      setAdditionalImageUrls([]);
       setError(null);
     } catch (err: any) {
       console.error('Error adding menu item:', err);
-      setError(err.response?.data?.message || 'Không thể thêm món ăn');
+      console.log('Error response:', err.response?.data);
+      setError(err.response?.data?.message || 'Không thể thêm món ăn. Vui lòng thử lại.');
     }
   };
-
   const handleEditMenuItem = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Không có token');
-
+  
+      // Kiểm tra dữ liệu
+      if (!menuFormData.name || !menuFormData.description || !menuFormData.price) {
+        setError('Vui lòng điền đầy đủ tên, mô tả và giá món ăn');
+        return;
+      }
+  
       const formData = new FormData();
       formData.append('name', menuFormData.name);
       formData.append('description', menuFormData.description);
       formData.append('price', menuFormData.price);
       formData.append('category_id', menuFormData.category_id);
-
-      if (menuFormData.main_image) {
-        formData.append('main_image', menuFormData.main_image);
+  
+      if (mainImageUrl) {
+        formData.append('main_image_url', mainImageUrl);
+      } else if (selectedMenuItem?.main_image_url) {
+        formData.append('main_image_url', selectedMenuItem.main_image_url);
       }
-
-      if (menuFormData.additional_images.length > 0) {
-        menuFormData.additional_images.forEach((image, index) => {
-          formData.append(`additional_images[${index}]`, image);
+  
+      if (additionalImageUrls.length > 0) {
+        additionalImageUrls.forEach((url, index) => {
+          formData.append(`additional_images[${index}]`, url);
+        });
+      } else if ((selectedMenuItem?.additional_images?.length ?? 0) > 0) {
+        selectedMenuItem!.additional_images.forEach((url, index) => {
+          formData.append(`additional_images[${index}]`, url);
         });
       }
-
+  
       console.log('Updating menu item data:', {
         name: menuFormData.name,
         description: menuFormData.description,
         price: menuFormData.price,
         category_id: menuFormData.category_id,
-        hasMainImage: !!menuFormData.main_image,
-        additionalImagesCount: menuFormData.additional_images.length,
+        main_image_url: mainImageUrl || selectedMenuItem?.main_image_url,
+        additional_images: additionalImageUrls.length
+          ? additionalImageUrls
+          : selectedMenuItem?.additional_images,
       });
-
+  
       const response = await axios.put(
         `http://localhost:8080/api/v1/menu_item/${selectedMenuItem?._id}`,
         formData,
@@ -419,11 +491,11 @@ const RestaurantEdit: React.FC = () => {
           },
         }
       );
-
+  
       console.log('Menu item update response:', response.data);
-
+  
       await fetchRestaurant();
-
+  
       setSelectedMenuItem(null);
       setMenuFormData({
         name: '',
@@ -433,6 +505,10 @@ const RestaurantEdit: React.FC = () => {
         main_image: null,
         additional_images: [],
       });
+      setMainImagePreview(null);
+      setAdditionalImagePreviews([]);
+      setMainImageUrl('');
+      setAdditionalImageUrls([]);
       setError(null);
     } catch (err: any) {
       console.error('Error updating menu item:', err);
@@ -525,19 +601,20 @@ const RestaurantEdit: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                <textarea
-                  name="description"
-                  value={restaurantFormData.description}
-                  onChange={handleRestaurantInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
-                  rows={3}
-                />
-              </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+  <textarea
+    name="description"
+    value={menuFormData.description}
+    onChange={handleMenuInputChange}
+    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
+    rows={3}
+    required // Thêm required để bắt buộc nhập mô tả
+  />
+</div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                {categories.length === 0 ? (
+                {restaurantCategories.length === 0 ? (
                   <p className="text-red-600">Không có danh mục nào. Vui lòng kiểm tra lại.</p>
                 ) : (
                   <select
@@ -548,7 +625,7 @@ const RestaurantEdit: React.FC = () => {
                     required
                   >
                     <option value="">Chọn danh mục</option>
-                    {categories.map(category => (
+                    {restaurantCategories.map(category => (
                       <option key={category._id} value={category._id}>
                         {category.category_name}
                       </option>
@@ -656,139 +733,199 @@ const RestaurantEdit: React.FC = () => {
             </div>
 
             {showAddMenuForm && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">
-                  {selectedMenuItem ? 'Chỉnh sửa món ăn' : 'Thêm món ăn mới'}
-                </h3>
-                <form
-                  onSubmit={selectedMenuItem ? handleEditMenuItem : handleAddMenu}
-                  className="space-y-4"
+  <div className="bg-white rounded-lg shadow-md p-6">
+    <h3 className="text-lg font-bold text-gray-800 mb-4">
+      {selectedMenuItem ? 'Chỉnh sửa món ăn' : 'Thêm món ăn mới'}
+    </h3>
+    <form
+      onSubmit={selectedMenuItem ? handleEditMenuItem : handleAddMenu}
+      className="space-y-4"
+    >
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Tên món ăn</label>
+        <input
+          type="text"
+          name="name"
+          value={menuFormData.name}
+          onChange={handleMenuInputChange}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+        <textarea
+          name="description"
+          value={menuFormData.description}
+          onChange={handleMenuInputChange}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
+          rows={3}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Giá</label>
+        <input
+          type="number"
+          name="price"
+          value={menuFormData.price}
+          onChange={handleMenuInputChange}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+        {menuCategories.length === 0 ? (
+          <p className="text-red-600">Không có danh mục nào. Vui lòng kiểm tra lại.</p>
+        ) : (
+          <select
+            name="category_id"
+            value={menuFormData.category_id}
+            onChange={handleMenuInputChange}
+            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
+            required
+          >
+            <option value="">Chọn danh mục</option>
+            {menuCategories.map(category => (
+              <option key={category._id} value={category._id}>
+                {category.category_name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh chính</label>
+        <div className="flex items-center space-x-4">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => handleMenuFileChange(e, 'main')}
+            className="hidden"
+            id="main-image"
+          />
+          <label
+            htmlFor="main-image"
+            className="cursor-pointer px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
+          >
+            <FaImage className="mr-2" /> Chọn ảnh
+          </label>
+        </div>
+        {mainImagePreview && (
+          <div className="mt-2 relative">
+            <img
+              src={mainImagePreview}
+              alt="Main Image Preview"
+              className="w-32 h-32 object-cover rounded"
+            />
+            <button
+              type="button"
+              onClick={() => handleRemoveMenuImage('main')}
+              className="absolute top-0 right-0 p-1 bg-red-600 text-white rounded-full"
+            >
+              <FaTrash size={12} />
+            </button>
+          </div>
+        )}
+        {selectedMenuItem?.main_image_url && !mainImagePreview && (
+          <div className="mt-2 relative">
+            <img
+              src={selectedMenuItem.main_image_url}
+              alt="Current Main Image"
+              className="w-32 h-32 object-cover rounded"
+            />
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh phụ</label>
+        <div className="flex items-center space-x-4">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={e => handleMenuFileChange(e, 'additional')}
+            className="hidden"
+            id="additional dietary-images-menu"
+          />
+          <label
+            htmlFor="additional-images-menu"
+            className="cursor-pointer px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
+          >
+            <FaImage className="mr-2" /> Chọn ảnh
+          </label>
+        </div>
+        {(additionalImagePreviews.length > 0 || (selectedMenuItem?.additional_images?.length ?? 0) > 0) && (
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {additionalImagePreviews.map((preview, index) => (
+              <div key={`new-${index}`} className="relative">
+                <img
+                  src={preview}
+                  alt={`Additional ${index}`}
+                  className="w-32 h-32 object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveMenuImage('additional', index)}
+                  className="absolute top-0 right-0 p-1 bg-red-600 text-white rounded-full"
                 >
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tên món ăn</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={menuFormData.name}
-                      onChange={handleMenuInputChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                    <textarea
-                      name="description"
-                      value={menuFormData.description}
-                      onChange={handleMenuInputChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Giá</label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={menuFormData.price}
-                      onChange={handleMenuInputChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                    {categories.length === 0 ? (
-                      <p className="text-red-600">Không có danh mục nào. Vui lòng kiểm tra lại.</p>
-                    ) : (
-                      <select
-                        name="category_id"
-                        value={menuFormData.category_id}
-                        onChange={handleMenuInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
-                        required
-                      >
-                        <option value="">Chọn danh mục</option>
-                        {categories.map(category => (
-                          <option key={category._id} value={category._id}>
-                            {category.category_name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh chính</label>
-                    <div className="flex items-center space-x-4">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={e => handleMenuFileChange(e, 'main')}
-                        className="hidden"
-                        id="main-image"
-                      />
-                      <label
-                        htmlFor="main-image"
-                        className="cursor-pointer px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
-                      >
-                        <FaImage className="mr-2" /> Chọn ảnh
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh phụ</label>
-                    <div className="flex items-center space-x-4">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={e => handleMenuFileChange(e, 'additional')}
-                        className="hidden"
-                        id="additional-images-menu"
-                      />
-                      <label
-                        htmlFor="additional-images-menu"
-                        className="cursor-pointer px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
-                      >
-                        <FaImage className="mr-2" /> Chọn ảnh
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-4 mt-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddMenuForm(false);
-                        setMenuFormData({
-                          name: '',
-                          description: '',
-                          price: '',
-                          category_id: '',
-                          main_image: null,
-                          additional_images: [],
-                        });
-                        setSelectedMenuItem(null);
-                      }}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
-                    >
-                      {selectedMenuItem ? 'Cập nhật' : 'Thêm món ăn'}
-                    </button>
-                  </div>
-                </form>
+                  <FaTrash size={12} />
+                </button>
               </div>
+            ))}
+            {selectedMenuItem?.additional_images?.map((url, index) =>
+              !additionalImagePreviews[index] ? (
+                <div key={`existing-${index}`} className="relative">
+                  <img
+                    src={url}
+                    alt={`Existing Additional ${index}`}
+                    className="w-32 h-32 object-cover rounded"
+                  />
+                </div>
+              ) : null
             )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end space-x-4 mt-4">
+        <button
+          type="button"
+          onClick={() => {
+            setShowAddMenuForm(false);
+            setMenuFormData({
+              name: '',
+              description: '',
+              price: '',
+              category_id: '',
+              main_image: null,
+              additional_images: [],
+            });
+            setSelectedMenuItem(null);
+            setMainImagePreview(null);
+            setAdditionalImagePreviews([]);
+            setMainImageUrl('');
+            setAdditionalImageUrls([]);
+          }}
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+        >
+          Hủy
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
+        >
+          {selectedMenuItem ? 'Cập nhật' : 'Thêm món ăn'}
+        </button>
+      </div>
+    </form>
+  </div>
+)}
 
             <div className="mt-8">
               <h3 className="text-lg font-bold text-gray-800 mb-4">Danh sách món ăn</h3>
@@ -812,6 +949,8 @@ const RestaurantEdit: React.FC = () => {
                               main_image: null,
                               additional_images: [],
                             });
+                            setMainImageUrl(item.main_image_url);
+                            setAdditionalImageUrls(item.additional_images);
                             setShowAddMenuForm(true);
                           }}
                           className="p-2 text-gray-600 hover:text-gray-800"
@@ -822,6 +961,13 @@ const RestaurantEdit: React.FC = () => {
                     </div>
                     <p className="text-gray-600 mb-2">{item.description}</p>
                     <p className="text-gray-600 mb-2">Giá: {item.price} VND</p>
+                    {item.main_image_url && (
+                      <img
+                        src={item.main_image_url}
+                        alt={item.name}
+                        className="w-full h-32 object-cover rounded mt-2"
+                      />
+                    )}
                   </div>
                 ))}
               </div>

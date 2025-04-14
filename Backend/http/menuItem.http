@@ -18,15 +18,17 @@ Content-Type: application/json
 
 ###
 
-PUT http://localhost:8080/api/v1/users/67d16d9c5fa5d8164fc7c6aa
+PUT http://localhost:8080/api/v1/menu_Item/67fcef29e6ef342ebc6606be
 Content-Type: application/json
 
 {
-    "username": "khachhang",
-    "fullname": "khachhang",
-    "email": "khachhang@gmail.com",
-    "password": "khachhang",
-    "role": "restaurant_owner"
+    "restaurant_id": "67fbad6df40d63df57129f21",
+    "name": "Bánh Mỳ tỏi",
+    "description": "Bánh mỳ cay, thơm ngon đặc biệt",
+    "price": 100000, 
+    "category_id": "67d50273b4d46e2a092144dd",
+    "main_image_url": "https://via.placeholder.com/150",
+    "additional_images": ["https://via.placeholder.com/100", "https://via.placeholder.com/200"]
 }
 
 ###

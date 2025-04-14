@@ -4,30 +4,31 @@ import { Link, useNavigate } from "react-router-dom";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
 
-  // Lấy username và lắng nghe thay đổi localStorage
+  // Lấy thông tin người dùng từ localStorage
   useEffect(() => {
-    // Hàm cập nhật username từ localStorage
-    const updateUsername = () => {
-      const storedUsername = localStorage.getItem("username");
-      console.log("Header fetched username:", storedUsername || "null");
-      setUsername(storedUsername);
+    const fetchUser = () => {
+      const userProfile = localStorage.getItem("userProfile");
+      if (userProfile) {
+        const userData = JSON.parse(userProfile);
+        setUser(userData);
+      }
     };
 
     // Gọi lần đầu khi mount
-    updateUsername();
+    fetchUser();
 
     // Lắng nghe sự kiện storage
-    window.addEventListener("storage", updateUsername);
+    window.addEventListener("storage", fetchUser);
 
     // Dùng setInterval để kiểm tra localStorage (dự phòng cho cùng tab)
-    const intervalId = setInterval(updateUsername, 1000); // Kiểm tra mỗi 1s
+    const intervalId = setInterval(fetchUser, 1000); // Kiểm tra mỗi 1s
 
     // Cleanup
     return () => {
-      window.removeEventListener("storage", updateUsername);
+      window.removeEventListener("storage", fetchUser);
       clearInterval(intervalId);
     };
   }, []);
@@ -37,15 +38,10 @@ export default function Header() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("username");
-    localStorage.removeItem("token");
     localStorage.removeItem("userProfile");
-    setUsername(null);
-    console.log("User logged out");
+    setUser(null);
     navigate("/login");
   };
-
-  console.log("Current username state:", username);
 
   return (
     <header className="sticky top-0 z-50 bg-[#efe2db] shadow-sm">
@@ -75,9 +71,22 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center space-x-4">
-          {username ? (
+          {user ? (
             <div className="flex items-center space-x-4">
-              <span className="text-[#1e0907] font-medium">Xin chào, {username}</span>
+              <Link
+                to="/profile"
+                className="text-[#1e0907] hover:text-[#bb6f57] font-medium flex items-center"
+              >
+                <User className="h-5 w-5 mr-1" /> {user.fullname}
+              </Link>
+              {user.role === "restaurant_owner" && (
+                <Link
+                  to="/add-restaurant"
+                  className="text-[#1e0907] hover:text-[#bb6f57] font-medium"
+                >
+                  Thêm nhà hàng
+                </Link>
+              )}
               <button
                 className="text-[#1e0907] hover:text-[#bb6f57] font-medium flex items-center"
                 onClick={handleLogout}
@@ -147,9 +156,24 @@ export default function Header() {
             >
               Contact
             </Link>
-            {username ? (
+            {user ? (
               <div className="flex flex-col space-y-4">
-                <span className="text-[#1e0907] font-medium">Xin chào, {username}</span>
+                <Link
+                  to="/profile"
+                  className="text-[#1e0907] hover:text-[#bb6f57] font-medium flex items-center"
+                  onClick={toggleMenu}
+                >
+                  <User className="h-5 w-5 mr-1" /> {user.fullname}
+                </Link>
+                {user.role === "restaurant_owner" && (
+                  <Link
+                    to="/add-restaurant"
+                    className="text-[#1e0907] hover:text-[#bb6f57] font-medium"
+                    onClick={toggleMenu}
+                  >
+                    Thêm nhà hàng
+                  </Link>
+                )}
                 <button
                   className="text-[#1e0907] hover:text-[#bb6f57] font-medium flex items-center"
                   onClick={handleLogout}

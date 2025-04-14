@@ -10,6 +10,7 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import RestaurantDetail from './components/RestaurantDetail';
 import MenuItems from './components/MenuItems';
+import UserProfile from './components/UserProfile';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +31,7 @@ const App: React.FC = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/restaurant/:id" element={<RestaurantDetail />} />
             <Route path="/menu" element={<MenuItems />} />
+            <Route path="/profile" element={<UserProfile />} />
           </Routes>
 
           {/* Đặt Footer ở đây để luôn hiển thị trên mọi trang */}

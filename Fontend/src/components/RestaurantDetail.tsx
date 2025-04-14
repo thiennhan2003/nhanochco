@@ -2,11 +2,23 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import noImage from "../assets/no-image.svg";
-import { FaStar, FaPhone, FaMapMarkerAlt, FaClock } from "react-icons/fa";
+import { FaStar, FaPhone, FaMapMarkerAlt, FaClock, FaUtensils } from "react-icons/fa";
 
 interface Category {
   _id: string;
   category_name: string;
+}
+
+interface MenuItem {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  main_image_url: string;
+  additional_images: string[];
+  comments: any[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Restaurant {
@@ -19,6 +31,7 @@ interface Restaurant {
   average_rating: number;
   image_url: string;
   comments: any[];
+  menu_id: MenuItem[];
   is_active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -165,16 +178,16 @@ const RestaurantDetail: React.FC = () => {
       {/* Hero Section */}
       <div className="relative h-[400px] overflow-hidden">
         <img
-          src={restaurant.image_url || noImage}
-          alt={restaurant.name}
+          src={restaurant?.image_url || noImage}
+          alt={restaurant?.name}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black bg-opacity-30"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-          <h1 className="text-4xl font-bold mb-2">{restaurant.name}</h1>
+          <h1 className="text-4xl font-bold mb-2">{restaurant?.name}</h1>
           <div className="flex items-center gap-2">
             <FaStar className="text-yellow-400" />
-            <span>{restaurant.average_rating?.toFixed(1) || 0}</span>
+            <span>{restaurant?.average_rating?.toFixed(1) || 0}</span>
           </div>
         </div>
       </div>
@@ -185,21 +198,21 @@ const RestaurantDetail: React.FC = () => {
           {/* Description */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-[#1e0907] mb-4">Giới thiệu</h2>
-            <p className="text-gray-700">{restaurant.description || "Chưa có mô tả"}</p>
+            <p className="text-gray-700">{restaurant?.description || "Chưa có mô tả"}</p>
           </div>
 
           {/* Information Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <div>
               <h3 className="text-xl font-bold text-[#1e0907] mb-4">Thông tin liên hệ</h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <FaPhone className="text-[#7c160f]" />
-                  <span>{restaurant.phone || "Chưa cập nhật"}</span>
+                  <span>{restaurant?.phone || "Chưa cập nhật"}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <FaMapMarkerAlt className="text-[#7c160f]" />
-                  <span>{restaurant.address || "Chưa cập nhật"}</span>
+                  <span>{restaurant?.address || "Chưa cập nhật"}</span>
                 </div>
               </div>
             </div>
@@ -213,10 +226,59 @@ const RestaurantDetail: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[#7c160f]">Danh mục:</span>
-                  <span>{restaurant.category_id?.category_name || "Chưa phân loại"}</span>
+                  <span>{restaurant?.category_id?.category_name || "Chưa phân loại"}</span>
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Menu Section */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-[#1e0907] mb-6">Thực đơn</h3>
+            
+            {restaurant?.menu_id?.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {restaurant?.menu_id.map((menuItem: MenuItem) => (
+                  <div key={menuItem._id} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                    <div className="relative aspect-square mb-4">
+                      <img 
+                        src={menuItem.main_image_url || noImage} 
+                        alt={menuItem.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-xl font-semibold text-gray-800">{menuItem.name}</h4>
+                      <p className="text-gray-600">{menuItem.description}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Giá:</span>
+                        <span className="text-gray-600 font-medium">
+                          {menuItem.price.toLocaleString('vi-VN')} ₫
+                        </span>
+                      </div>
+                      
+                      {/* Additional images */}
+                      {menuItem.additional_images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          {menuItem.additional_images.map((imageUrl, index) => (
+                            <img 
+                              key={index}
+                              src={imageUrl}
+                              alt={`${menuItem.name} - ${index + 1}`}
+                              className="w-full h-24 object-cover rounded"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-gray-600">
+                <p>Chưa có món ăn trong thực đơn</p>
+              </div>
+            )}
           </div>
 
           {/* Comments Section */}

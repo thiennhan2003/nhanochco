@@ -15,10 +15,12 @@ interface PostCardProps {
     author: string;
     username: string;
     date: string;
-    images: string[]; 
-    likes: string[]; 
+    images: string[];
+    likes: string[];
     views: number;
     comments: Comment[];
+    restaurant_id?: string;
+    restaurant_data?: { name: string; address: string };
   };
 }
 
@@ -28,8 +30,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [comments, setComments] = useState<Comment[]>(post.comments);
   const [likeCount, setLikeCount] = useState(post.likes.length);
   const [isLiked, setIsLiked] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ 
-    id: string; 
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
     username: string;
     fullname: string;
   } | null>(null);
@@ -40,7 +42,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userProfile = localStorage.getItem("userProfile");
-    
+
     if (token && userProfile) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
@@ -48,10 +50,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         setCurrentUser({
           id: payload._id || "",
           username: profile.username || "",
-          fullname: profile.fullname || ""
+          fullname: profile.fullname || "",
         });
       } catch (error) {
-        console.error("Error getting user info:", error);
         setCurrentUser(null);
       }
     }
@@ -59,77 +60,48 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
   useEffect(() => {
     const checkLikeStatus = async () => {
+      if (!currentUser?.id) return;
       try {
-        if (!currentUser?.id) return;
-        
-        const response = await axios.get(
-          `http://localhost:8080/api/v1/likes/post/${post.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        
+        const response = await axios.get(`http://localhost:8080/api/v1/likes/post/${post.id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
         const likedUsers = response.data.data.users;
         setIsLiked(likedUsers.some((user: any) => user.user_id === currentUser.id));
         setLikeCount(response.data.data.likeCount || 0);
       } catch (error) {
-        console.error("Error checking like status:", error);
+        console.error("Lỗi kiểm tra trạng thái thích:", error);
       }
     };
-
     checkLikeStatus();
   }, [currentUser, post.id]);
 
-  const toggleComments = () => {
-    setShowComments(!showComments);
-  };
+  const toggleComments = () => setShowComments(!showComments);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) {
       setCommentError("Bình luận không được để trống!");
       return;
     }
-    if (newComment.trim().length < 3) {
-      setCommentError("Bình luận phải có ít nhất 3 ký tự!");
-      return;
-    }
     if (!currentUser) {
       setCommentError("Vui lòng đăng nhập để bình luận!");
       return;
     }
-
     try {
       setIsLoading(true);
-      setCommentError(null);
-      const token = localStorage.getItem("token");
-
       const response = await axios.post(
         "http://localhost:8080/api/v1/commentPost",
-        {
-          post_id: post.id,
-          user_id: currentUser.id,
-          content: newComment.trim(),
-        },
+        { post_id: post.id, user_id: currentUser.id, content: newComment.trim() },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
           },
         }
       );
-
-      const addedComment: Comment = {
-        content: response.data.content || newComment.trim(),
-        username: currentUser.fullname // Sử dụng fullname thay vì username
-      };
-      setComments([...comments, addedComment]);
+      setComments([...comments, { content: newComment.trim(), username: currentUser.fullname }]);
       setNewComment("");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
-      console.error("Error adding comment:", errorMessage);
-      setCommentError(`Không thể thêm bình luận: ${errorMessage}`);
+      setCommentError("Không thể thêm bình luận!");
     } finally {
       setIsLoading(false);
     }
@@ -137,111 +109,103 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
   const handleLike = async () => {
     if (!currentUser) {
-      setLikeError("Vui lòng đăng nhập để thích bài viết!");
+      setLikeError("Vui lòng đăng nhập!");
       return;
     }
-
     try {
       setIsLoading(true);
-      setLikeError(null);
-
       const response = await axios.post(
         "http://localhost:8080/api/v1/likes/likePost",
-        {
-          post_id: post.id,
-          user_id: currentUser.id
-        },
+        { post_id: post.id, user_id: currentUser.id },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
-
       if (response.data.data.action === "liked") {
-        setLikeCount(prev => prev + 1);
+        setLikeCount((prev) => prev + 1);
         setIsLiked(true);
       } else {
-        setLikeCount(prev => prev - 1);
+        setLikeCount((prev) => prev - 1);
         setIsLiked(false);
       }
     } catch (error) {
-      console.error("Error liking post:", error);
-      setLikeError("Có lỗi xảy ra khi thích bài viết!");
+      setLikeError("Lỗi khi thích bài viết!");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md w-full max-w-2xl mx-auto mb-4 border border-gray-200">
-      <div className="flex items-center p-4 border-b border-gray-200">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden mb-4">
+      {/* Header: Username và thời gian */}
+      <div className="p-4 flex items-center">
         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-          <FaUser className="text-gray-500" />
+          <FaUser className="text-gray-500 text-sm" />
         </div>
         <div>
-          <p className="font-semibold text-gray-800">{post.author}</p>
-          <p className="text-xs text-gray-500">{post.date}</p>
+          <p className="font-semibold text-gray-800">@{post.username}</p>
+          <p className="text-sm text-gray-500">{post.date}</p>
         </div>
       </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">{post.title}</h3>
-        <p className="text-gray-700">{post.content}</p>
+
+      {/* Nội dung bài viết */}
+      <div className="px-4">
+        <p className="text-gray-800 mb-2">{post.content}</p>
+
+        {/* Gắn thẻ nhà hàng */}
+        {post.restaurant_data?.name && (
+          <p className="text-sm text-blue-600 mb-2">
+            @{post.username} đã gắn thẻ {post.restaurant_data.name}
+          </p>
+        )}
+
+        {/* Hình ảnh */}
+        {post.images[0] && (
+          <div className="mb-4">
+            <img
+              src={post.images[0]}
+              alt={post.title}
+              className="w-full h-64 object-cover rounded-lg"
+            />
+          </div>
+        )}
       </div>
-      {post.images && post.images.length > 0 && (
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
-          {post.images.map((image, index) => (
-            <div key={index} className="relative w-full aspect-video">
-              <img 
-                src={image} 
-                alt={`${post.title} - ${index + 1}`}
-                className="w-full h-full object-cover rounded-lg"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = ""; // Có thể thay bằng một ảnh mặc định
-                  target.style.display = "none";
-                }}
-              />
-            </div>
-          ))}
+
+      {/* Tương tác */}
+      <div className="flex justify-between items-center px-4 py-2 border-t border-gray-200">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleLike}
+            disabled={isLoading}
+            className={`flex items-center ${isLiked ? "text-blue-600" : "text-gray-600"} hover:text-blue-600`}
+          >
+            <FaHeart className="w-5 h-5 mr-1" />
+            <span>{likeCount} Thích</span>
+          </button>
+          <button
+            className="flex items-center text-gray-600 hover:text-blue-600"
+            onClick={toggleComments}
+          >
+            <FaComment className="w-5 h-5 mr-1" />
+            <span>{comments.length} Bình luận</span>
+          </button>
         </div>
-      )}
-      <div className="flex justify-between items-center px-4 py-2 text-gray-600 text-sm border-t border-gray-200">
-        <span>{likeCount} Likes</span>
-        <span>{comments.length} Comments</span>
-        <span>{post.views} Views</span>
+        <button className="text-gray-600 hover:text-blue-600">
+    Chia sẻ
+  </button>
       </div>
-      <div className="flex justify-around py-2 border-t border-b border-gray-200">
-        <button
-          onClick={handleLike}
-          disabled={isLoading}
-          className={`flex items-center ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 disabled:opacity-50`}
-        >
-          <FaHeart className="w-5 h-5 mr-1" />
-          {isLiked ? 'Đã thích' : 'Thích'}
-        </button>
-        <button
-          className="flex items-center text-gray-600 hover:text-blue-600"
-          onClick={toggleComments}
-        >
-          <FaComment className="w-5 h-5 mr-1" />
-          Comment
-        </button>
-      </div>
-      {likeError && (
-        <div className="p-2 bg-red-100 text-red-600 text-sm">
-          {likeError}
-        </div>
-      )}
+
+      {/* Hiển thị lỗi nếu có */}
+      {likeError && <div className="p-2 bg-red-100 text-red-600 text-sm">{likeError}</div>}
+
+      {/* Bình luận */}
       {showComments && (
         <div className="p-4">
           {commentError && (
-            <div className="bg-red-100 text-red-600 text-sm p-2 rounded mb-2">
-              {commentError}
-            </div>
+            <div className="bg-red-100 text-red-600 text-sm p-2 rounded mb-2">{commentError}</div>
           )}
           {comments.length > 0 ? (
             <ul className="space-y-3 mb-4">
@@ -258,7 +222,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm mb-4">Chưa có bình luận nào.</p>
+            <p className="text-gray-500 text-sm mb-4">Chưa có bình luận.</p>
           )}
           <div className="flex items-center">
             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
@@ -268,14 +232,14 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder={currentUser ? "Viết bình luận..." : "Vui lòng đăng nhập để bình luận"}
-              className="flex-1 p-2 rounded-full border border-gray-300 focus:outline-none focus:border-blue-500"
+              placeholder={currentUser ? "Viết bình luận..." : "Vui lòng đăng nhập"}
+              className="flex-1 p-2 rounded-full border"
               disabled={isLoading || !currentUser}
             />
             <button
               onClick={handleAddComment}
               disabled={isLoading || !currentUser}
-              className="ml-2 text-blue-600 hover:text-blue-800 font-semibold disabled:opacity-50"
+              className="ml-2 text-blue-600 font-semibold"
             >
               {isLoading ? "Đang gửi..." : "Gửi"}
             </button>

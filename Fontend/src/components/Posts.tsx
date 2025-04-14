@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import PostCard from "./PostCard";
 import PostForm from "./PostForm";
-import { FaHeart, FaComment, FaSpinner } from "react-icons/fa";
+import { FaSpinner } from "react-icons/fa";
 
 interface Comment {
   _id: string;
   content: string;
   createdAt: string;
+  user_id: { _id: string; username: string };
 }
 
 interface Post {
@@ -16,30 +17,21 @@ interface Post {
   title: string;
   content: string;
   images: string[];
-  user_id: {
-    _id: string;
-    fullname: string;
-    username: string;
-  };
+  user_id: { _id: string; fullname: string; username: string };
   createdAt: string;
   updatedAt: string;
   likes: string[];
   comments: Comment[];
   viewCount: number;
   is_active: boolean;
+  restaurant_id?: string;
+  restaurant_data?: { name: string; address: string };
 }
 
 interface ApiResponse {
   statusCode: number;
   message: string;
-  data: {
-    posts: Post[];
-    pagination: {
-      totalRecord: number;
-      limit: number;
-      page: number;
-    };
-  };
+  data: { posts: Post[]; pagination: { totalRecord: number; limit: number; page: number } };
 }
 
 const Posts: React.FC = () => {
@@ -57,62 +49,54 @@ const Posts: React.FC = () => {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        setCurrentUser({
-          id: payload._id || "",
-          username: payload.username || "Guest",
-        });
+        setCurrentUser({ id: payload._id || "", username: payload.username || "Guest" });
       } catch (error) {
-        console.error("Error decoding token:", error);
-        setError("Token không hợp lệ. Vui lòng đăng nhập lại.");
+        setError("Token không hợp lệ!");
       }
     } else {
-      setError("Vui lòng đăng nhập để xem bài viết.");
+      setError("Vui lòng đăng nhập!");
     }
   }, []);
 
   const fetchPosts = async (pageNum: number, isLoadMore: boolean = false) => {
     if (!currentUser) return;
-
     try {
-      if (!isLoadMore) {
-        setLoading(true);
-      } else {
-        setIsLoadingMore(true);
-      }
+      if (!isLoadMore) setLoading(true);
+      else setIsLoadingMore(true);
       setError(null);
 
       const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
-      }
-
       const response = await axios.get<ApiResponse>("http://localhost:8080/api/v1/posts", {
         headers: { Authorization: `Bearer ${token}` },
-        params: { 
-          page: pageNum, 
-          limit: 10, 
-          sort_type: "desc", 
-          sort_by: "createdAt" 
-        },
+        params: { page: pageNum, limit: 10, sort_type: "desc", sort_by: "createdAt" },
       });
 
-      if (!response.data?.data?.posts) {
-        throw new Error("Không nhận được dữ liệu bài viết");
-      }
+      const newPosts = response.data.data.posts.filter((post) => post.is_active);
+      // Lấy thông tin nhà hàng nếu có restaurant_id
+      const postsWithRestaurantData = await Promise.all(
+        newPosts.map(async (post) => {
+          if (post.restaurant_id) {
+            try {
+              const restaurantResponse = await axios.get(
+                `http://localhost:8080/api/v1/restaurants/${post.restaurant_id}`
+              );
+              return { ...post, restaurant_data: restaurantResponse.data.data };
+            } catch (err) {
+              return post;
+            }
+          }
+          return post;
+        })
+      );
 
-      const newPosts = response.data.data.posts.filter(post => post.is_active);
-      
       if (isLoadMore) {
-        setPosts(prevPosts => [...prevPosts, ...newPosts]);
+        setPosts((prevPosts) => [...prevPosts, ...postsWithRestaurantData]);
       } else {
-        setPosts(newPosts);
+        setPosts(postsWithRestaurantData);
       }
-
       setHasMore(newPosts.length === 10);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra khi tải bài viết";
-      console.error("Error fetching posts:", errorMessage);
-      setError(errorMessage);
+      setError("Lỗi khi tải bài viết!");
     } finally {
       setLoading(false);
       setIsLoadingMore(false);
@@ -120,61 +104,56 @@ const Posts: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentUser) {
-      fetchPosts(1);
-    }
+    if (currentUser) fetchPosts(1);
   }, [currentUser]);
 
-  const handleAddPost = async (newPost: { title: string; content: string; images: string[] }) => {
+  const handleAddPost = async (newPost: {
+    title: string;
+    content: string;
+    images: string[];
+    restaurant_id?: string;
+  }) => {
     try {
       const token = localStorage.getItem("token");
       const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
-      
-      if (!token || !userProfile._id) {
-        throw new Error("Vui lòng đăng nhập để đăng bài!");
-      }
 
-      // Kiểm tra và xử lý dữ liệu trước khi gửi
-      if (!newPost?.title || !newPost?.content) {
-        throw new Error("Tiêu đề và nội dung không được để trống!");
-      }
+      if (!token || !userProfile._id) throw new Error("Vui lòng đăng nhập!");
 
       const response = await axios.post(
         "http://localhost:8080/api/v1/posts",
-        {
-          title: newPost.title.trim(),
-          content: newPost.content.trim(),
-          images: newPost.images,
-          user_id: userProfile._id
-        },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          } 
-        }
+        { ...newPost, user_id: userProfile._id },
+        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
 
-      // Tạo post mới với đầy đủ thông tin
       const addedPost: Post = {
         ...response.data.data,
         user_id: {
           _id: userProfile._id,
           fullname: userProfile.fullname || "Unknown",
-          username: userProfile.username || "unknown"
+          username: userProfile.username || "unknown",
         },
         likes: [],
         comments: [],
         viewCount: 0,
-        is_active: true
+        is_active: true,
       };
 
-      setPosts(prevPosts => [addedPost, ...prevPosts]);
+      // Lấy thông tin nhà hàng nếu có restaurant_id
+      if (newPost.restaurant_id) {
+        try {
+          const restaurantResponse = await axios.get(
+            `http://localhost:8080/api/v1/restaurants/${newPost.restaurant_id}`
+          );
+          addedPost.restaurant_data = restaurantResponse.data.data;
+        } catch (err) {
+          console.error("Lỗi khi lấy thông tin nhà hàng:", err);
+        }
+      }
+
+      setPosts((prevPosts) => [addedPost, ...prevPosts]);
       setShowForm(false);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
-      console.error("Error adding post:", errorMessage);
-      alert(`Không thể tạo bài viết: ${errorMessage}`);
+      alert("Không thể tạo bài viết!");
     }
   };
 
@@ -195,20 +174,14 @@ const Posts: React.FC = () => {
   }
 
   if (error) {
-    return (
-      <div className="text-center py-10">
-        <div className="bg-red-100 text-red-600 p-4 rounded-lg max-w-md mx-auto">
-          {error}
-        </div>
-      </div>
-    );
+    return <div className="text-center py-10 text-red-600">{error}</div>;
   }
 
   return (
     <div className="bg-[#efe2db] min-h-screen text-[#1e0907]">
       <div className="container mx-auto py-10 px-4">
         <button
-          className="fixed top-20 left-5 bg-[#7c160f] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#bb6f57] transition-colors duration-200"
+          className="fixed top-20 left-5 bg-[#7c160f] text-white px-4 py-2 rounded-full"
           onClick={() => setShowForm(true)}
         >
           + Add Post
@@ -236,23 +209,17 @@ const Posts: React.FC = () => {
                     views: post.viewCount || 0,
                     comments: (post.comments || []).map((c) => ({
                       content: c.content,
-                      username: post.user_id?.username || "unknown",
+                      username: c.user_id?.username || "unknown",
                     })),
+                    restaurant_id: post.restaurant_id,
+                    restaurant_data: post.restaurant_data,
                   }}
                 />
-                <div className="flex justify-end items-center mt-2 space-x-4">
-                  <button className="flex items-center text-red-500 hover:text-red-700">
-                    <FaHeart className="mr-1" /> {post.likes?.length || 0}
-                  </button>
-                  <button className="flex items-center text-blue-500 hover:text-blue-700">
-                    <FaComment className="mr-1" /> {post.comments?.length || 0}
-                  </button>
-                </div>
               </motion.div>
             ))
           ) : (
             <div className="col-span-full text-center py-10">
-              <p className="text-gray-600">Không có bài viết nào để hiển thị.</p>
+              <p className="text-gray-600">Không có bài viết nào!</p>
             </div>
           )}
         </div>
@@ -261,11 +228,9 @@ const Posts: React.FC = () => {
             <button
               onClick={handleLoadMore}
               disabled={isLoadingMore}
-              className="bg-[#7c160f] text-white px-6 py-2 rounded-full shadow-lg hover:bg-[#bb6f57] transition-colors duration-200 disabled:opacity-50"
+              className="bg-[#7c160f] text-white px-6 py-2 rounded-full"
             >
-              {isLoadingMore ? (
-                <FaSpinner className="animate-spin inline-block mr-2" />
-              ) : null}
+              {isLoadingMore ? <FaSpinner className="animate-spin inline-block mr-2" /> : null}
               {isLoadingMore ? "Đang tải..." : "Tải thêm"}
             </button>
           </div>

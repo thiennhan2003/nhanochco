@@ -17,6 +17,10 @@ const postSchema = new mongoose.Schema({
     images:[{ 
         type:String,
     }],
+    restaurant_id: {
+        type: Schema.Types.ObjectId,
+        ref: "Restaurant",
+      },
     is_active:{
         type:Boolean,
         default:true,

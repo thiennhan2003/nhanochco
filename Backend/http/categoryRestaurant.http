@@ -14,7 +14,7 @@ Content-Type: application/json
 }
 
 ### Cập nhật danh mục
-PUT http://localhost:8080/api/v1/categoryRestaurant/67d2491bcec58d464bf67774
+PUT http://localhost:8080/api/v1/categoryRestaurant/67fd4af04bd3cfa8bf8a331e
 Content-Type: application/json
 
 {

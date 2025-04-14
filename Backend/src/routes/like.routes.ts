@@ -1,4 +1,5 @@
 import express from 'express';
+import { RequestHandler } from 'express';
 import likeController from '../controllers/like.controller';
 
 const router = express.Router();

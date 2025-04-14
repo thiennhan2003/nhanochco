@@ -5,6 +5,7 @@ import {
   PieChartOutlined,
   TeamOutlined,
   UserOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
@@ -33,9 +34,11 @@ function getItem(
 const items: MenuItem[] = [
   getItem('DashBoard', '', <PieChartOutlined />),
   getItem('Restaurant', 'restaurants', <DesktopOutlined />),
-  getItem('Menu Items', 'menu_items', <UserOutlined />), // Updated key to match route
-  getItem('Post', 'posts', <TeamOutlined />),
+  getItem('Menu Items', 'menu_items', <UserOutlined />),
+  getItem('Posts', 'posts', <TeamOutlined />),
   getItem('User', 'users', <FileOutlined />),
+  getItem('Category Restaurants', 'category_restaurants', <AppstoreOutlined />),
+  getItem('Category Menu Items', 'category_menu_items', <AppstoreOutlined />),
 ];
 
 const DefaultLayout: React.FC = () => {

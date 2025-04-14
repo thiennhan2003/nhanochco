@@ -11,8 +11,8 @@ Content-Type: application/json
     "fullname": "miko11dsada",
     "email": "mikocutecute1@gmail.com",
     "password": "1234567891",
-    "role": "restaurant",
-    "avatar": "https://i2.wp.com/images.genshin-builds.com/genshin/characters/yae_miko/image.png?strip=all&quality=75&w=256"
+    "role": "restaurant_owner",
+    "avatar": "http://localhost:3001/uploads/4e6bc970fc4eb15d862d9ecd57a45a4f.jpg"
 }
 
 ###

@@ -103,9 +103,9 @@ const UserProfile: React.FC = () => {
         {/* Profile Card */}
         <div className="bg-white rounded-3xl shadow-md overflow-hidden mb-10">
           {/* Banner with gradient overlay */}
-          <div className="h-40 sm:h-56 bg-gradient-to-r from-rose-600 to-rose-400 relative">
-            <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
-            <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/30 to-transparent"></div>
+          <div className="h-40 sm:h-56 bg-gradient-to-r from-rose-300 to-rose-300 relative">
+            <div className="absolute inset-0 backdrop-blur-sm"></div>
+            <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/10 to-transparent"></div>
           </div>
           
           <div className="px-5 sm:px-8 pb-8 relative">
@@ -113,7 +113,7 @@ const UserProfile: React.FC = () => {
               {/* Avatar with animated hover effect */}
               <div className="relative z-10 mx-auto sm:mx-0">
                 <div className="h-32 w-32 sm:h-44 sm:w-44 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white relative group">
-                  <div className="absolute inset-0 bg-gradient-to-b from-rose-500/20 to-rose-700/30 group-hover:opacity-0 transition-opacity duration-300 z-10"></div>
+                  <div className="absolute inset-0 bg-gradient-to-b group-hover:opacity-0 transition-opacity duration-300 z-10"></div>
                   <img
                     src={user.avatar || "https://via.placeholder.com/160"}
                     alt={user.fullname}
@@ -122,7 +122,7 @@ const UserProfile: React.FC = () => {
                 </div>
                 
                 {/* Status badge positioned on avatar */}
-                <div className="absolute bottom-3 right-3">
+                <div className="absolute bottom-3 -right-6">
                   {user.active ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
                       <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
@@ -139,7 +139,7 @@ const UserProfile: React.FC = () => {
               
               {/* User info */}
               <div className="mt-6 sm:mt-0 sm:ml-8 text-center sm:text-left">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">{user.fullname}</h1>
+                <h1 className="text-2xl sm:text-3xl lg:text-2xl font-bold text-gray-900 mt-24">{user.fullname}</h1>
                 <p className="text-gray-500 mb-2">@{user.username}</p>
                 <p className="inline-block bg-rose-50 text-rose-700 px-3 py-1 rounded-full text-sm font-medium">
                   {user.role.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}

@@ -5,6 +5,7 @@ import { sendJsonSuccess, httpStatus } from '../helpers/reponse.helper';
 import userModel from '../models/user.model';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import defaultAvatars from '../config/defaultAvatars';
 
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -24,8 +25,16 @@ const getUserById = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
-    try{
+    try {
         const payload = req.body;
+
+        // Always assign a random avatar from the default avatars array
+        const randomAvatar = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+        payload.avatar = randomAvatar;
+
+        // Log the avatar being assigned
+        console.log("Assigned avatar:", payload.avatar);
+
         const user = await usersService.createUser(payload);
         sendJsonSuccess(res, user, httpStatus.CREATED.message, httpStatus.CREATED.statusCode);
     } catch (error) {

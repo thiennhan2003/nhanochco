@@ -1,6 +1,7 @@
 GET http://localhost:8080/api/v1/posts
 ###
-GET http://localhost:8080/api/v1/posts/1
+GET http://localhost:8080/api/v1/posts/67fc8064b9cfe2c75d2ca7c8
+
 
 ###
 POST http://localhost:8080/api/v1/posts

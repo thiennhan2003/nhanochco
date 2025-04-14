@@ -78,7 +78,7 @@ const MenuItems: React.FC = () => {
             .map((item) => (
             <Link 
               key={item._id} 
-              to={`/menu-item/${item._id}`}
+              to={`/menu_item/${item._id}`}
               className="block hover:transform hover:scale-105 transition-transform duration-300"
             >
               <MenuItemCard

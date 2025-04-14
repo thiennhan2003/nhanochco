@@ -11,6 +11,9 @@ import Signup from "./components/Signup";
 import RestaurantDetail from './components/RestaurantDetail';
 import MenuItems from './components/MenuItems';
 import UserProfile from './components/UserProfile';
+import RestaurantEdit from './components/RestaurantEdit';
+import PostDetail from './components/PostDetail';
+import MenuItemDetail from './components/MenuItemDetail';
 
 const App: React.FC = () => {
   return (
@@ -27,11 +30,15 @@ const App: React.FC = () => {
             <Route path="/restaurants" element={<Restaurants />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/posts" element={<Posts />} />
+            <Route path="/post/:id" element={<PostDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/restaurant/:id" element={<RestaurantDetail />} />
+            <Route path="/restaurants/:id" element={<RestaurantDetail />} />
             <Route path="/menu" element={<MenuItems />} />
+            <Route path="/menu_item/:id" element={<MenuItemDetail />} />
+
             <Route path="/profile" element={<UserProfile />} />
+            <Route path="/edit-restaurant/:id" element={<RestaurantEdit />} />
           </Routes>
 
           {/* Đặt Footer ở đây để luôn hiển thị trên mọi trang */}

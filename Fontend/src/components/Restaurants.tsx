@@ -120,7 +120,7 @@ const Restaurants: React.FC = () => {
             .map((restaurant) => (
             <Link 
               key={restaurant._id} 
-              to={`/restaurant/${restaurant._id}`}
+              to={`/restaurants/${restaurant._id}`}
               className="block hover:transform hover:scale-105 transition-transform duration-300"
             >
               <RestaurantCard

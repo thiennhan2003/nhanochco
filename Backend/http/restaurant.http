@@ -18,13 +18,20 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/v1/restaurants/67d16d9c5fa5d8164fc7c6aa
+PUT http://localhost:8080/api/v1/restaurants/67fc70beb9cfe2c75d2ca1f0
 Content-Type: application/json
 
 {
-    "name": "Updated Restaurant Name",
-    "address": "Updated Address",
-    "phone": "Updated Phone"
+  "owner_id": "67fa71cb439dd64e02bd5e15",
+  "name": "Nhà hàng Mikodangiu dsadadsada",
+  "address": "123 Nguyễn Văn Linh",
+  "phone": "0909090909",
+  "description": "Nhà hàng ngon",
+  "category_id": "67da879e7348c31ac2f4cfbb",
+  "average_rating": 4.5,
+  "avatar_url": "https://via.placeholder.com/150",
+  "is_active": true,
+  "images": []
 }
 
 ###

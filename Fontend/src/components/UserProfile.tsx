@@ -189,10 +189,10 @@ const UserProfile: React.FC = () => {
                             Xem chi tiết
                           </Link>
                           <Link
-                            to={`/add-restaurant/${restaurant._id}`}
+                            to={`/edit-restaurant/${restaurant._id}`}
                             className="text-green-500 hover:text-green-700"
                           >
-                            Chỉnh sửa
+                            Quản lý nhà hàng
                           </Link>
                         </div>
                       </div>

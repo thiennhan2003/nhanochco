@@ -69,7 +69,34 @@ return {
         );
         
         console.log('Updated post:', updatedPost); // Log để debug
-
+        if (payload.rating) {
+            // Tìm tất cả comment có rating của nhà hàng
+            const comments = await commentRestaurantModel.find({
+                restaurant_id: payload.restaurant_id,
+                rating: { $exists: true, $ne: null }
+            });
+            
+            // Tính giá trị trung bình
+            let totalRating = 0;
+            let validComments = 0;
+            
+            comments.forEach(comment => {
+                if (comment.rating) {
+                    totalRating += comment.rating;
+                    validComments++;
+                }
+            });
+            
+            const averageRating = validComments > 0 ? totalRating / validComments : 0;
+            
+            // Cập nhật average_rating của nhà hàng
+            await restaurantModel.findByIdAndUpdate(
+                payload.restaurant_id,
+                { average_rating: averageRating }
+            );
+            
+            console.log('Updated average_rating to:', averageRating); // Log để debug
+        }
         // Trả về comment đã populate
         const populatedComment = await commentRestaurantModel.findById(comment._id)
             .populate('restaurant_id')

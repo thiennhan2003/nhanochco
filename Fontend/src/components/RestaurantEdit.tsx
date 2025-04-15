@@ -150,29 +150,44 @@ const RestaurantEdit: React.FC = () => {
   ) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-
+  
     if (type === 'main') {
       const file = files[0];
       setMenuFormData(prev => ({ ...prev, main_image: file }));
-      handleImageUpload(file, true, true);
-
-      const reader = new FileReader();
-      reader.onload = e => setMainImagePreview(e.target?.result as string);
-      reader.readAsDataURL(file);
+      handleImageUpload(file, true, true).then(url => {
+        if (url) {
+          setMainImageUrl(url);
+          const reader = new FileReader();
+          reader.onload = e => setMainImagePreview(e.target?.result as string);
+          reader.readAsDataURL(file);
+        }
+      });
     } else {
       const validFiles = files.filter(file => file.type.startsWith('image/'));
-      setMenuFormData(prev => ({ ...prev, additional_images: validFiles }));
-      validFiles.forEach(file => {
-        handleImageUpload(file, false, true);
-        const reader = new FileReader();
-        reader.onload = e => {
-          setAdditionalImagePreviews(prev => [...prev, e.target?.result as string]);
-        };
-        reader.readAsDataURL(file);
+      Promise.all(
+        validFiles.map(file =>
+          handleImageUpload(file, false, true).then(url => {
+            if (url) {
+              const reader = new FileReader();
+              reader.onload = e => {
+                setAdditionalImagePreviews(prev => [...prev, e.target?.result as string]);
+              };
+              reader.readAsDataURL(file);
+              return url;
+            }
+            return null;
+          })
+        )
+      ).then(urls => {
+        const validUrls = urls.filter(url => url != null) as string[];
+        setAdditionalImageUrls(prev => [...prev, ...validUrls]);
+        setMenuFormData(prev => ({
+          ...prev,
+          additional_images: [...prev.additional_images, ...validFiles],
+        }));
       });
     }
   };
-
   // Xóa ảnh nhà hàng
   const handleRemoveImage = (index: number) => {
     setImageUrls(prev => prev.filter((_, i) => i !== index));
@@ -222,7 +237,7 @@ const RestaurantEdit: React.FC = () => {
           name: data.name,
           address: data.address,
           phone: data.phone.toString(),
-          description: data.description,
+          description: data.description || '',
           category_id: data.category_id._id,
         });
         setAvatarUrl(data.avatar_url);
@@ -399,7 +414,7 @@ const RestaurantEdit: React.FC = () => {
         category_id: menuFormData.category_id,
         restaurant_id: id,
         main_image_url: mainImageUrl || '',
-        additional_images: additionalImageUrls,
+        additional_images: additionalImageUrls, // Đảm bảo sử dụng additionalImageUrls
       };
   
       console.log('Submitting menu item data:', data);
@@ -442,52 +457,31 @@ const RestaurantEdit: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Không có token');
   
-      // Kiểm tra dữ liệu
       if (!menuFormData.name || !menuFormData.description || !menuFormData.price) {
         setError('Vui lòng điền đầy đủ tên, mô tả và giá món ăn');
         return;
       }
   
-      const formData = new FormData();
-      formData.append('name', menuFormData.name);
-      formData.append('description', menuFormData.description);
-      formData.append('price', menuFormData.price);
-      formData.append('category_id', menuFormData.category_id);
-  
-      if (mainImageUrl) {
-        formData.append('main_image_url', mainImageUrl);
-      } else if (selectedMenuItem?.main_image_url) {
-        formData.append('main_image_url', selectedMenuItem.main_image_url);
-      }
-  
-      if (additionalImageUrls.length > 0) {
-        additionalImageUrls.forEach((url, index) => {
-          formData.append(`additional_images[${index}]`, url);
-        });
-      } else if ((selectedMenuItem?.additional_images?.length ?? 0) > 0) {
-        selectedMenuItem!.additional_images.forEach((url, index) => {
-          formData.append(`additional_images[${index}]`, url);
-        });
-      }
-  
-      console.log('Updating menu item data:', {
+      const data = {
         name: menuFormData.name,
         description: menuFormData.description,
-        price: menuFormData.price,
+        price: Number(menuFormData.price),
         category_id: menuFormData.category_id,
-        main_image_url: mainImageUrl || selectedMenuItem?.main_image_url,
+        main_image_url: mainImageUrl || (selectedMenuItem?.main_image_url ?? ''),
         additional_images: additionalImageUrls.length
           ? additionalImageUrls
-          : selectedMenuItem?.additional_images,
-      });
+          : (selectedMenuItem?.additional_images ?? []),
+      };
+  
+      console.log('Updating menu item data:', data);
   
       const response = await axios.put(
         `http://localhost:8080/api/v1/menu_item/${selectedMenuItem?._id}`,
-        formData,
+        data,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -601,16 +595,16 @@ const RestaurantEdit: React.FC = () => {
               </div>
 
               <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-  <textarea
-    name="description"
-    value={menuFormData.description}
-    onChange={handleMenuInputChange}
-    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
-    rows={3}
-    required // Thêm required để bắt buộc nhập mô tả
-  />
-</div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+              <textarea
+                name="description"
+                value={restaurantFormData.description}
+                onChange={handleRestaurantInputChange}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c160f] focus:border-transparent"
+                rows={3}
+                required
+              />
+            </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
@@ -843,55 +837,57 @@ const RestaurantEdit: React.FC = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh phụ</label>
-        <div className="flex items-center space-x-4">
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={e => handleMenuFileChange(e, 'additional')}
-            className="hidden"
-            id="additional dietary-images-menu"
+  <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh phụ</label>
+  <div className="flex items-center space-x-4">
+    <input
+      type="file"
+      accept="image/*"
+      multiple
+      onChange={e => handleMenuFileChange(e, 'additional')}
+      className="hidden"
+      id="additional-images-menu"
+    />
+    <label
+      htmlFor="additional-images-menu"
+      className="cursor-pointer px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
+    >
+      <FaImage className="mr-2" /> Chọn ảnh
+    </label>
+  </div>
+  {additionalImagePreviews.length > 0 && (
+    <div className="mt-4 grid grid-cols-3 gap-4">
+      {additionalImagePreviews.map((preview, index) => (
+        <div key={`new-${index}`} className="relative">
+          <img
+            src={preview}
+            alt={`Additional ${index}`}
+            className="w-32 h-32 object-cover rounded"
           />
-          <label
-            htmlFor="additional-images-menu"
-            className="cursor-pointer px-4 py-2 bg-[#7c160f] text-white rounded hover:bg-[#bb6f57]"
+          <button
+            type="button"
+            onClick={() => handleRemoveMenuImage('additional', index)}
+            className="absolute top-0 right-0 p-1 bg-red-600 text-white rounded-full"
           >
-            <FaImage className="mr-2" /> Chọn ảnh
-          </label>
+            <FaTrash size={12} />
+          </button>
         </div>
-        {(additionalImagePreviews.length > 0 || (selectedMenuItem?.additional_images?.length ?? 0) > 0) && (
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            {additionalImagePreviews.map((preview, index) => (
-              <div key={`new-${index}`} className="relative">
-                <img
-                  src={preview}
-                  alt={`Additional ${index}`}
-                  className="w-32 h-32 object-cover rounded"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveMenuImage('additional', index)}
-                  className="absolute top-0 right-0 p-1 bg-red-600 text-white rounded-full"
-                >
-                  <FaTrash size={12} />
-                </button>
-              </div>
-            ))}
-            {selectedMenuItem?.additional_images?.map((url, index) =>
-              !additionalImagePreviews[index] ? (
-                <div key={`existing-${index}`} className="relative">
-                  <img
-                    src={url}
-                    alt={`Existing Additional ${index}`}
-                    className="w-32 h-32 object-cover rounded"
-                  />
-                </div>
-              ) : null
-            )}
-          </div>
-        )}
-      </div>
+      ))}
+    </div>
+  )}
+  {selectedMenuItem && selectedMenuItem.additional_images && selectedMenuItem.additional_images.length > 0 && !showAddMenuForm && (
+    <div className="mt-4 grid grid-cols-3 gap-4">
+      {selectedMenuItem.additional_images.map((url, index) => (
+        <div key={`existing-${index}`} className="relative">
+          <img
+            src={url}
+            alt={`Existing Additional ${index}`}
+            className="w-32 h-32 object-cover rounded"
+          />
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
       <div className="flex justify-end space-x-4 mt-4">
         <button

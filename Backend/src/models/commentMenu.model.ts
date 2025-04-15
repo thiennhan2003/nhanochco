@@ -22,6 +22,16 @@ const commentMenuSchema = new Schema({
         type:Number,
         default:0,
     },
+    // rating: {
+    //     type: Number,
+    //     required: [true, "Rating is required"],
+    //     min: [1, "Rating must be at least 1"],
+    //     max: [5, "Rating must be at most 5"],
+    //     validate: {
+    //       validator: Number.isInteger,
+    //       message: "Rating must be an integer",
+    //     },
+    //   },
 
 },
 {

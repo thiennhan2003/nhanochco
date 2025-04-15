@@ -5,15 +5,18 @@ import { FaHeart, FaComment } from "react-icons/fa";
 interface User {
   _id: string;
   username: string;
-  fullname: string;
-  avatar?: string;
+  avatar: string;
 }
 
 interface Comment {
   _id: string;
   content: string;
-  user_id?: User;
-  post_id?: { _id: string } | null;
+  user_id: {
+    _id: string;
+    username: string;
+    avatar: string;
+  };
+  post_id: { _id: string };
   createdAt: string;
   likes: string[];
   views: number;
@@ -237,16 +240,17 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center mr-3">
             <img
               src={post.user_id?.avatar || defaultAvatar}
-              alt={post.user_id?.fullname || post.user_id?.username || "Người dùng"}
-              className="w-full h-full object-cover"
-              onError={(e) => (e.currentTarget.src = defaultAvatar)}
+              alt="Avatar"
+              className="w-10 h-10 rounded-full object-cover"
             />
           </div>
-          <div>
-            <p className="font-semibold text-gray-800">
-              @{post.user_id?.username}
-            </p>
-            <p className="text-sm text-gray-500">{formatDate(post.date)}</p>
+          <div className="ml-3 flex-1">
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">{post.title}</h3>
+            <div className="flex items-center text-sm text-gray-600">
+              <span>{post.user_id?.username}</span>
+              <span className="mx-2">•</span>
+              <span>{formatDate(post.date)}</span>
+            </div>
           </div>
         </div>
 
@@ -316,18 +320,14 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center mr-2">
                       <img
                         src={comment.user_id?.avatar || defaultAvatar}
-                        alt={
-                          comment.user_id?.fullname ||
-                          comment.user_id?.username ||
-                          "Người dùng"
-                        }
+                        alt={comment.user_id?.username || "Người dùng"}
                         className="w-full h-full object-cover"
                         onError={(e) => (e.currentTarget.src = defaultAvatar)}
                       />
                     </div>
                     <div className="bg-gray-100 p-2 rounded-lg text-gray-700 text-sm flex-1">
                       <p className="font-semibold">
-                        {comment.user_id?.fullname || comment.user_id?.username || "Người dùng"}
+                        {comment.user_id?.username || "Người dùng"}
                       </p>
                       <p>{comment.content}</p>
                       <p className="text-xs text-gray-500">{formatDate(comment.createdAt)}</p>

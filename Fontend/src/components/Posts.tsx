@@ -9,7 +9,8 @@ interface Comment {
   _id: string;
   content: string;
   createdAt: string;
-  user_id: { _id: string; username: string };
+  likes: string[];
+  views: number;
 }
 
 interface Post {
@@ -17,12 +18,18 @@ interface Post {
   title: string;
   content: string;
   images: string[];
-  user_id: { _id: string; fullname: string; username: string };
+  user_id: {
+    _id: string;
+    username: string;
+    fullname: string;
+    avatar: string;
+  };
   createdAt: string;
   updatedAt: string;
   likes: string[];
   comments: Comment[];
   viewCount: number;
+  likeCount: number;
   is_active: boolean;
   restaurant_id?: string;
   restaurant_data?: { name: string; address: string };
@@ -197,19 +204,28 @@ const Posts: React.FC = () => {
                 transition={{ duration: 0.5 }}
               >
                 <PostCard
+                  key={post._id}
                   post={{
                     id: post._id,
                     title: post.title,
                     content: post.content,
-                    author: post.user_id?.fullname || "Unknown",
-                    username: post.user_id?.username || "unknown",
-                    date: new Date(post.createdAt).toLocaleDateString(),
-                    images: post.images || [],
-                    likes: post.likes || [],
-                    views: post.viewCount || 0,
-                    comments: (post.comments || []).map((c) => ({
+                    user_id: post.user_id,
+                    date: post.createdAt,
+                    images: post.images,
+                    likes: post.likes,
+                    views: post.viewCount,
+                    comments: post.comments.map(c => ({
+                      _id: c._id,
                       content: c.content,
-                      username: c.user_id?.username || "unknown",
+                      user_id: {
+                        _id: post.user_id._id,
+                        username: post.user_id.username,
+                        avatar: post.user_id.avatar
+                      },
+                      post_id: { _id: post._id },
+                      createdAt: c.createdAt,
+                      likes: [],
+                      views: 0
                     })),
                     restaurant_id: post.restaurant_id,
                     restaurant_data: post.restaurant_data,

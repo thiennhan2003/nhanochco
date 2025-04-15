@@ -17,7 +17,7 @@ const getAllposts = async (query:any) => {
     .skip((page - 1) * limit)
     .limit(limit)
     .sort({...sortObject})
-    .populate('user_id', 'username fullname')
+    .populate('user_id', 'username fullname avatar')
     .populate({
         path: 'comments',
         select: 'content createdAt target_type'

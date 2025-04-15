@@ -101,13 +101,14 @@ const PostForm: React.FC<PostFormProps> = ({ onAddPost, onClose }) => {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
 
-      onAddPost({ ...payload, restaurant_id: restaurantId });
+
       setTitle("");
       setContent("");
       setImageUrls([]);
       setImageFiles([]);
       setRestaurantId("");
       onClose();
+      window.location.reload();
     } catch (err) {
       setError("Không thể đăng bài!");
     } finally {

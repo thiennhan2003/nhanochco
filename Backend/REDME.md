@@ -167,28 +167,4 @@ http://localhost:8080/api/v1/categoryMenuItem
 
 
 
-Backend/
-├── dist/                  # Thư mục chứa mã đã biên dịch từ TypeScript
-├── http/                 # (Tùy chọn) Thư mục chứa các yêu cầu HTTP hoặc cấu hình liên quan
-├── node_modules/         # Thư viện phụ thuộc (tự động tạo khi cài đặt)
-├── src/                  # Mã nguồn chính của dự án
-│   ├── config/           # Cấu hình hệ thống (biến môi trường, cấu hình DB,...)
-│   ├── controllers/      # Các controller xử lý logic của route
-│   ├── databases/        # Thiết lập kết nối và mô hình cơ sở dữ liệu
-│   ├── helpers/          # Các hàm tiện ích, xử lý dùng chung
-│   ├── middleware/       # Middleware xử lý request/response (có thể trùng tên)
-│   ├── middlewares/      # (Tùy chọn) Middleware mở rộng, chia nhỏ theo chức năng
-│   ├── models/           # Định nghĩa các mô hình dữ liệu
-│   ├── routes/           # Định tuyến các API
-│   ├── services/         # Business logic, gọi DB, xử lý dữ liệu
-│   ├── types/            # Định nghĩa các kiểu TypeScript dùng chung
-│   ├── validations/      # Xử lý và kiểm tra dữ liệu đầu vào
-│   ├── app.ts            # File cấu hình ứng dụng Express
-│   └── server.ts         # Điểm khởi chạy server
-├── .env                  # Biến môi trường cấu hình hệ thống
-├── package.json          # Thông tin dự án và các thư viện phụ thuộc
-├── package-lock.json     # Khóa phiên bản các gói đã cài đặt
-├── pnpm-lock.yaml        # File khóa nếu dùng pnpm
-├── tsconfig.json         # Cấu hình TypeScript
-├── README.md             # Tài liệu hướng dẫn sử dụng dự án
-└── thucmuc.md            # Báo cáo thực tập / mô tả quá trình làm
+<pre> ```plaintext Backend/ ├── dist/ # Thư mục chứa mã đã biên dịch từ TypeScript ├── http/ # (Tùy chọn) Thư mục chứa các yêu cầu HTTP hoặc cấu hình liên quan ├── node_modules/ # Thư viện phụ thuộc (tự động tạo khi cài đặt) ├── src/ # Mã nguồn chính của dự án │ ├── config/ # Cấu hình hệ thống (biến môi trường, cấu hình DB,...) │ ├── controllers/ # Các controller xử lý logic của route │ ├── databases/ # Thiết lập kết nối và mô hình cơ sở dữ liệu │ ├── helpers/ # Các hàm tiện ích, xử lý dùng chung │ ├── middleware/ # Middleware xử lý request/response (có thể trùng tên) │ ├── middlewares/ # (Tùy chọn) Middleware mở rộng, chia nhỏ theo chức năng │ ├── models/ # Định nghĩa các mô hình dữ liệu │ ├── routes/ # Định tuyến các API │ ├── services/ # Business logic, gọi DB, xử lý dữ liệu │ ├── types/ # Định nghĩa các kiểu TypeScript dùng chung │ ├── validations/ # Xử lý và kiểm tra dữ liệu đầu vào │ ├── app.ts # File cấu hình ứng dụng Express │ └── server.ts # Điểm khởi chạy server ├── .env # Biến môi trường cấu hình hệ thống ├── package.json # Thông tin dự án và các thư viện phụ thuộc ├── package-lock.json # Khóa phiên bản các gói đã cài đặt ├── pnpm-lock.yaml # File khóa nếu dùng pnpm ├── tsconfig.json # Cấu hình TypeScript ├── README.md # Tài liệu hướng dẫn sử dụng dự án └── thucmuc.md # Báo cáo thực tập / mô tả quá trình làm ``` </pre>
